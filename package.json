@@ -1,6 +1,6 @@
 {
   "name": "notion-calendar-widget",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Notion Calendar desktop widget",
   "author": "Will Ryan <will@willryan.ca>",
   "scripts": {

@@ -1,3 +1,5 @@
+## [1.5.1](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v1.5.0...v1.5.1) (2026-08-13)
+
 ## [1.5.0](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v1.4.3...v1.5.0) (2026-08-13)
 
 ## [1.4.3](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v1.4.2...v1.4.3) (2026-08-13)
