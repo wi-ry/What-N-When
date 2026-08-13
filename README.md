@@ -39,7 +39,7 @@ npm run dev
 npm run build
 ```
 
-Build output (NSIS and MSI installers) is written to `src-tauri/target/release/bundle/`.
+Build output includes NSIS and MSI installers in `src-tauri/target/release/bundle/` and the portable executable at `src-tauri/target/release/notion-calendar-widget.exe`. GitHub releases include a versioned portable executable alongside the installers.
 
 ## Development
 
