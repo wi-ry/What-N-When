@@ -2,6 +2,9 @@
 
 A desktop widget for Windows that embeds https://calendar.notion.so/ in an Electron frameless window.
 
+<img width="852" height="917" alt="image" src="https://github.com/user-attachments/assets/70895e72-4a71-4e9c-b11f-0b555e9d2954" />
+
+
 ## Features
 
 - Frameless floating widget with custom title bar
