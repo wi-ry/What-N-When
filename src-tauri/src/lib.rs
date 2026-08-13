@@ -8,7 +8,7 @@ use tauri::{
 use tauri_plugin_autostart::ManagerExt;
 
 const TITLEBAR_HEIGHT: f64 = 40.0;
-const LEGACY_ELECTRON_AUTOSTART_NAME: &str = "Notion Calendar Widget";
+const LEGACY_ELECTRON_AUTOSTART_NAME: &str = "ca.willryan.notioncalendarwidget";
 
 #[cfg(windows)]
 fn remove_legacy_electron_autostart() {
