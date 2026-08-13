@@ -1,14 +1,13 @@
 {
   "name": "notion-calendar-widget",
-  "version": "1.4.2",
+  "version": "2.0.0",
   "description": "Notion Calendar desktop widget",
   "author": "Will Ryan <will@willryan.ca>",
-  "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "check": "node --check main.js && node --check preload.js && node --check renderer.js && node --check options-preload.js && node --check optionsRenderer.js",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "check": "node --check web/renderer.js && node --check web/optionsRenderer.js",
     "lint:commits": "commitlint --from HEAD~20 --to HEAD --verbose",
-    "build:win": "electron-builder --win --x64 --publish never",
     "release": "semantic-release",
     "prepare": "husky install"
   },
@@ -21,41 +20,9 @@
     "@semantic-release/github": "^12.0.9",
     "@semantic-release/npm": "^12.0.2",
     "@semantic-release/release-notes-generator": "^14.1.1",
+    "@tauri-apps/cli": "^2",
     "conventional-changelog-conventionalcommits": "^10.3.0",
-    "electron": "^43.4.0",
-    "electron-builder": "^26.15.3",
     "husky": "^9.1.7",
     "semantic-release": "^24.2.9"
-  },
-  "build": {
-    "appId": "ca.willryan.notioncalendarwidget",
-    "productName": "Notion Calendar Widget",
-    "files": [
-      "*.js",
-      "*.html",
-      "package.json",
-      "assets/**"
-    ],
-    "directories": {
-      "output": "release"
-    },
-    "icon": "assets/notion-calendar.ico",
-    "win": {
-      "signAndEditExecutable": false,
-      "target": [
-        "nsis",
-        "portable"
-      ]
-    },
-    "nsis": {
-      "artifactName": "${productName}-${version}-Setup-${arch}.${ext}"
-    },
-    "portable": {
-      "artifactName": "${productName}-${version}-Portable-${arch}.${ext}"
-    }
-  },
-  "overrides": {
-    "node-gyp": "^13.0.1",
-    "ip-address": "^10.3.1"
   }
 }

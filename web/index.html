@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' tauri: asset: http://asset.localhost; script-src 'self'; style-src 'self' 'unsafe-inline'">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -29,7 +29,7 @@
       align-items: center;
       padding: 0 5px 0 15px;
       flex-shrink: 0;
-      -webkit-app-region: drag;
+      /* Tauri uses data-tauri-drag-region attribute; -webkit-app-region still works in Tauri's WebView2 */
       user-select: none;
     }
 
@@ -46,20 +46,31 @@
     }
 
     .btn {
-      -webkit-app-region: no-drag;
-      background: transparent;
+      -webkit-app-region: no-drag; /* buttons override the drag region */
       border: none;
+      background: none;
       color: #cccccc;
       width: 32px;
       height: 28px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 15px;
+      font-family: 'Segoe UI Symbol', sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-top: 2px;
       transition: background 0.1s, color 0.1s;
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     #options-btn { margin-left: auto; }
@@ -79,7 +90,6 @@
     .resize-handle {
       position: fixed;
       z-index: 9999;
-      -webkit-app-region: no-drag;
       pointer-events: auto;
     }
 
@@ -106,11 +116,17 @@
   <div class="resize-handle resize-bottom-left" data-edge="bottom-left"></div>
 
   <div id="app-shell">
-    <div id="titlebar">
+    <div id="titlebar" data-tauri-drag-region>
       <span id="title">Notion Calendar</span>
-      <button class="btn" id="options-btn" title="Options">⚙</button>
-      <button class="btn" id="refresh-btn" title="Refresh">↺</button>
-      <button class="btn" id="close-btn" title="Close">✕</button>
+      <button class="btn" id="options-btn" title="Options">
+        <svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.14.6.62 1.08 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      </button>
+      <button class="btn" id="refresh-btn" title="Refresh">
+        <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </button>
+      <button class="btn" id="close-btn" title="Close">
+        <svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></svg>
+      </button>
     </div>
     <div id="calendar-wrap"></div>
   </div>

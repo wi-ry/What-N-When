@@ -1,0 +1,13 @@
+{
+  "identifier": "default",
+  "description": "Default capabilities for main and options windows",
+  "windows": ["main", "options"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-resize-dragging",
+    "core:window:allow-start-dragging",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
+  ]
+}
