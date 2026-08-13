@@ -75,6 +75,13 @@ jobs:
       - name: Build Tauri app
         run: npm run build
 
+      - name: Prepare portable executable
+        shell: pwsh
+        run: |
+          Copy-Item `
+            "src-tauri/target/release/notion-calendar-widget.exe" `
+            "src-tauri/target/release/Notion.Calendar.Widget_${{ needs.release.outputs.version }}_x64-portable.exe"
+
       - name: Upload artifact to release
         uses: softprops/action-gh-release@v3
         with:
@@ -82,3 +89,4 @@ jobs:
           files: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/Notion.Calendar.Widget_${{ needs.release.outputs.version }}_x64-portable.exe
