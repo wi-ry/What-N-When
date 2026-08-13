@@ -1,6 +1,6 @@
 # Notion Calendar Widget
 
-A desktop widget for Windows that embeds https://calendar.notion.so/ in an Electron frameless window.
+A desktop widget for Windows that embeds https://calendar.notion.so/ in a frameless Tauri (Rust + WebView2) window.
 
 <img width="852" height="917" alt="image" src="https://github.com/user-attachments/assets/70895e72-4a71-4e9c-b11f-0b555e9d2954" />
 
@@ -8,9 +8,9 @@ A desktop widget for Windows that embeds https://calendar.notion.so/ in an Elect
 ## Features
 
 - Frameless floating widget with custom title bar
-- Refresh and close buttons
-- Always on top and hidden from taskbar
-- Persistent Notion session via webview partition
+- Refresh, options, and close buttons
+- Widget Options window (remember window bounds, launch at Windows startup)
+- Skipped from the taskbar
 - Persistent window size and position
 - Custom edge and corner resizing
 
@@ -18,6 +18,8 @@ A desktop widget for Windows that embeds https://calendar.notion.so/ in an Elect
 
 - Windows 10/11
 - Node.js 18+
+- Rust (stable toolchain) with the MSVC build tools
+- [WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (preinstalled on most modern Windows systems)
 
 ## Install
 
@@ -25,25 +27,25 @@ A desktop widget for Windows that embeds https://calendar.notion.so/ in an Elect
 npm install
 ```
 
-## Run
+## Run (development)
 
 ```powershell
-npm start
+npm run dev
 ```
 
 ## Build
 
 ```powershell
-npm run build:win
+npm run build
 ```
 
-Build output is written to `release/`.
+Build output (NSIS and MSI installers) is written to `src-tauri/target/release/bundle/`.
 
 ## Development
 
 ### Pre-push Hooks
 
-A Husky pre-push hook runs `npm run check` and `npm run build:win` before every push. This catches syntax errors and build failures locally, preventing broken commits from reaching GitHub.
+A Husky pre-push hook runs `npm run check` and `npm run build` before every push. This catches syntax errors and build failures locally, preventing broken commits from reaching GitHub.
 
 If you need to bypass the hook (not recommended):
 ```powershell
@@ -56,7 +58,7 @@ git push --no-verify
 	- Runs on push and pull request
 	- Installs dependencies with `npm ci`
 	- Runs syntax validation (`npm run check`)
-	- Builds Windows artifact (`npm run build:win`)
+	- Builds the Tauri app (`npm run build`) and uploads the NSIS/MSI installers as artifacts
 - Commit policy workflow: `.github/workflows/conventional-commits.yml`
 	- Runs on pull requests
 	- Validates PR title follows Conventional Commits
@@ -64,7 +66,7 @@ git push --no-verify
 - Release workflow: `.github/workflows/release.yml`
 	- Runs after `CI` completes successfully for `main`
 	- Uses `semantic-release` to generate version tags and GitHub releases
-	- Builds the Windows executable and uploads it as a release asset when a new release is published
+	- Builds the Windows installers and uploads them as release assets when a new release is published
 
 ## Semantic Versioning
 
@@ -114,19 +116,21 @@ BREAKING CHANGE: old settings.json format no longer compatible
 
 ## Project Files
 
-- `main.js` - Electron main process and window lifecycle
-- `preload.js` - Safe IPC bridge for renderer
-- `index.html` - Widget UI, title bar, and resize handles
-- `renderer.js` - Button behavior and manual resize interactions
-- `package.json` - Scripts and dependencies
+- `src-tauri/src/lib.rs` - Tauri app setup, window/webview lifecycle, and commands
+- `src-tauri/src/main.rs` - Entry point
+- `src-tauri/tauri.conf.json` - Window, bundle, and CSP configuration
+- `web/index.html` - Widget UI, title bar, and resize handles
+- `web/renderer.js` - Button behavior and manual resize interactions
+- `web/options.html` / `web/optionsRenderer.js` - Widget Options window
+- `package.json` - npm scripts and tooling dependencies
 
 ## Settings
 
-Window bounds are stored in:
+Window bounds and options are stored in:
 
-`%APPDATA%\notion-calendar-widget\settings.json`
+`%APPDATA%\ca.willryan.notioncalendarwidget\settings.json`
 
 ## Notes
 
-- First launch may take longer while Electron finishes setup.
 - Internet access is required for Notion Calendar.
+- The calendar is loaded as a child webview pointed at `https://calendar.notion.so/`; sign-in state is persisted by WebView2 between launches.
