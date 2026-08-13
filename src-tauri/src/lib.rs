@@ -8,6 +8,24 @@ use tauri::{
 use tauri_plugin_autostart::ManagerExt;
 
 const TITLEBAR_HEIGHT: f64 = 40.0;
+const LEGACY_ELECTRON_AUTOSTART_NAME: &str = "Notion Calendar Widget";
+
+#[cfg(windows)]
+fn remove_legacy_electron_autostart() {
+    use winreg::enums::{HKEY_CURRENT_USER, KEY_SET_VALUE};
+    use winreg::RegKey;
+
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    if let Ok(run_key) = hkcu.open_subkey_with_flags(
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+        KEY_SET_VALUE,
+    ) {
+        let _ = run_key.delete_value(LEGACY_ELECTRON_AUTOSTART_NAME);
+    }
+}
+
+#[cfg(not(windows))]
+fn remove_legacy_electron_autostart() {}
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -160,6 +178,15 @@ pub fn run() {
         .setup(|app| {
             let handle = app.handle().clone();
             let settings = load_settings(&handle);
+
+            remove_legacy_electron_autostart();
+
+            let autolaunch = handle.autolaunch();
+            let _ = if settings.options.open_at_login {
+                autolaunch.enable()
+            } else {
+                autolaunch.disable()
+            };
 
             let main_window = app.get_webview_window("main").unwrap();
             let main_base_window = app.get_window("main").unwrap();
