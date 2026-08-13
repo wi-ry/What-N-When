@@ -1,1 +1,1 @@
-npm run check && npm run build:win
+npm run check && npm run build
