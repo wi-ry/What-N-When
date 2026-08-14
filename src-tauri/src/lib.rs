@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tauri::{
     AppHandle, LogicalPosition, LogicalSize, Manager, PhysicalPosition, PhysicalSize, WebviewUrl,
     WebviewWindowBuilder,
@@ -9,6 +10,7 @@ use tauri_plugin_autostart::ManagerExt;
 
 const TITLEBAR_HEIGHT: f64 = 40.0;
 const LEGACY_ELECTRON_AUTOSTART_NAME: &str = "ca.willryan.notioncalendarwidget";
+static POPUP_WINDOW_ID: AtomicUsize = AtomicUsize::new(0);
 
 #[cfg(windows)]
 fn remove_legacy_electron_autostart() {
@@ -210,6 +212,31 @@ pub fn run() {
                     "calendar",
                     WebviewUrl::External("https://calendar.notion.so/".parse().unwrap()),
                 )
+                .on_new_window({
+                    let handle = handle.clone();
+                    move |_url, features| {
+                        let label = format!(
+                            "notion-calendar-popup-{}",
+                            POPUP_WINDOW_ID.fetch_add(1, Ordering::Relaxed)
+                        );
+                        let result = WebviewWindowBuilder::new(
+                            &handle,
+                            &label,
+                            WebviewUrl::External("about:blank".parse().unwrap()),
+                        )
+                        .window_features(features)
+                        .title("Notion Calendar Sign In")
+                        .on_document_title_changed(|window, title| {
+                            let _ = window.set_title(&title);
+                        })
+                        .build();
+
+                        match result {
+                            Ok(window) => tauri::webview::NewWindowResponse::Create { window },
+                            Err(_) => tauri::webview::NewWindowResponse::Deny,
+                        }
+                    }
+                })
                 .background_color(tauri::webview::Color(0x1a, 0x1a, 0x1a, 0xff)),
                 LogicalPosition::new(0.0, TITLEBAR_HEIGHT),
                 LogicalSize::new(lw, lh - TITLEBAR_HEIGHT),
