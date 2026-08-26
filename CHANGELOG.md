@@ -1,3 +1,9 @@
+## [2.1.1](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.0...v2.1.1) (2026-08-26)
+
+### Bug Fixes
+
+* **release:** trigger on successful main CI runs ([3e4cdd2](https://github.com/wi-ry/Notion-Calendar-Widget/commit/3e4cdd20cb9a924aa221bcd11d716c6bd8d30d62))
+
 ## [2.1.0](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.0.9...v2.1.0) (2026-08-26)
 
 ### Features
