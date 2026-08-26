@@ -1,3 +1,18 @@
+## [2.1.0](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.0.9...v2.1.0) (2026-08-26)
+
+### Features
+
+* **widget:** add desktop toggle modes ([855628a](https://github.com/wi-ry/Notion-Calendar-Widget/commit/855628a32e6448a53f48cbd266ca401446c4417f))
+
+### Bug Fixes
+
+* **release:** align changelog preset versions ([0044e5a](https://github.com/wi-ry/Notion-Calendar-Widget/commit/0044e5a9a1394b5d3dde441f64e4ca552a6a5a3a))
+
+### Continuous Integration
+
+* cache installed node dependencies ([9e9cf87](https://github.com/wi-ry/Notion-Calendar-Widget/commit/9e9cf87abff49e57bf1a17368d009a3d1f100e21))
+* skip installer bundling on pull requests ([249eabe](https://github.com/wi-ry/Notion-Calendar-Widget/commit/249eabe3996f206a816f3877d006f4c4e7e09b74))
+
 ## [2.0.9](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.0.8...v2.0.9) (2026-08-16)
 
 ## [2.0.8](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.0.7...v2.0.8) (2026-08-16)
