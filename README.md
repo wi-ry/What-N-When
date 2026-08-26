@@ -10,6 +10,7 @@ A desktop widget for Windows that embeds https://calendar.notion.so/ in a framel
 - Frameless floating widget with custom title bar
 - Refresh, options, and close buttons
 - Widget Options window (remember window bounds, launch at Windows startup)
+- Optional desktop double-click toggle to hide or show the widget
 - Skipped from the taskbar
 - Persistent window size and position
 - Custom edge and corner resizing
