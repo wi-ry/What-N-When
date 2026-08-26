@@ -4,6 +4,8 @@ on:
   workflow_run:
     workflows:
       - CI
+    branches:
+      - main
     types:
       - completed
 
@@ -14,7 +16,7 @@ permissions:
 
 jobs:
   release:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     outputs:
       published: ${{ steps.semantic.outputs.new_release_published }}
