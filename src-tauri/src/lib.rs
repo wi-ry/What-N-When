@@ -202,18 +202,18 @@ unsafe fn desktop_window_details(point: POINT) -> (bool, String) {
 
     // Explorer commonly places the clickable desktop surface below several child windows.
     let mut classes = Vec::new();
+    let mut is_file_explorer_window = false;
+    let mut is_desktop_surface = false;
     for _ in 0..8 {
         let mut class_name = [0u16; 32];
         let length = GetClassNameW(window, class_name.as_mut_ptr(), class_name.len() as i32);
         let class_name = String::from_utf16_lossy(&class_name[..length.max(0) as usize]);
-        let is_desktop_surface = matches!(
+        is_file_explorer_window |= matches!(class_name.as_str(), "CabinetWClass" | "ExploreWClass");
+        is_desktop_surface |= matches!(
             class_name.as_str(),
             "Progman" | "WorkerW" | "SHELLDLL_DefView" | "SysListView32"
         );
         classes.push(class_name);
-        if is_desktop_surface {
-            return (true, classes.join(" > "));
-        }
 
         window = GetParent(window);
         if window.is_null() {
@@ -221,7 +221,7 @@ unsafe fn desktop_window_details(point: POINT) -> (bool, String) {
         }
     }
 
-    (false, classes.join(" > "))
+    (is_desktop_surface && !is_file_explorer_window, classes.join(" > "))
 }
 
 #[cfg(windows)]
