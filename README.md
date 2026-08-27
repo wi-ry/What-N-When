@@ -28,6 +28,10 @@ A desktop widget for Windows that embeds https://calendar.notion.so/ in a framel
 npm install
 ```
 
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
 ## Run (development)
 
 ```powershell
