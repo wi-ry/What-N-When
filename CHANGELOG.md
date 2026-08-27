@@ -1,3 +1,9 @@
+## [2.1.3](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.2...v2.1.3) (2026-08-27)
+
+### Documentation
+
+* add MIT license ([61dbd2d](https://github.com/wi-ry/Notion-Calendar-Widget/commit/61dbd2ddcc4590439b9b257cb6908a9136ad7a2c))
+
 ## [2.1.2](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.1...v2.1.2) (2026-08-27)
 
 ### Bug Fixes
