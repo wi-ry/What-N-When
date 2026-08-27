@@ -1,3 +1,13 @@
+## [2.1.2](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.1...v2.1.2) (2026-08-27)
+
+### Bug Fixes
+
+* update project instructions and Explorer handling ([4ee2300](https://github.com/wi-ry/Notion-Calendar-Widget/commit/4ee2300aaef9dc70d14f19ac5a82cd7f8a26aaac))
+
+### Maintenance
+
+* **deps:** update npm dependencies ([889dda0](https://github.com/wi-ry/Notion-Calendar-Widget/commit/889dda0e528a80e8c5f7b51958ccf3a2dce22801))
+
 ## [2.1.1](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.0...v2.1.1) (2026-08-26)
 
 ### Bug Fixes
