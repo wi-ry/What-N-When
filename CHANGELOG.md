@@ -1,3 +1,22 @@
+## [2.1.4](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.3...v2.1.4) (2026-09-10)
+
+### Bug Fixes
+
+* **ci:** locate makeappx on Windows runners ([95e7b4b](https://github.com/wi-ry/Notion-Calendar-Widget/commit/95e7b4b07bc89095799d5cc07292eebe84251b18))
+* **msix:** reorder manifest elements to satisfy runFullTrust schema requirement ([d2c6bad](https://github.com/wi-ry/Notion-Calendar-Widget/commit/d2c6bad1a19ccceed02fb674358425f29f6ac43a))
+* **msix:** resolve manifest schema error and extract manifest to template file ([cf95b7b](https://github.com/wi-ry/Notion-Calendar-Widget/commit/cf95b7b8f50b70429d089c166e7c12b9c2d3c7be))
+* **msix:** use correct case-sensitive EntryPoint value for full-trust apps ([301b22e](https://github.com/wi-ry/Notion-Calendar-Widget/commit/301b22eb644c8dd83355584dd03f58b12082ceae))
+
+### Maintenance
+
+* **deps-dev:** bump conventional-changelog-conventionalcommits ([a5a01ec](https://github.com/wi-ry/Notion-Calendar-Widget/commit/a5a01ec0de5df8ffa77d58548279059d0550702e))
+* **deps-dev:** bump js-yaml from 4.3.1 to 4.3.2 ([eb5fd9a](https://github.com/wi-ry/Notion-Calendar-Widget/commit/eb5fd9a33140af61cac94425a4547dac570fc734))
+* **deps:** bump actions/cache from 4 to 6 ([7d12215](https://github.com/wi-ry/Notion-Calendar-Widget/commit/7d122155900274e3bf81bf4726b197a6f5b5a47c))
+
+### Continuous Integration
+
+* add MSIX packaging ([d5e8418](https://github.com/wi-ry/Notion-Calendar-Widget/commit/d5e841826dc4f7a7006884f5b80633675bc37316))
+
 ## [2.1.3](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.2...v2.1.3) (2026-08-27)
 
 ### Documentation
