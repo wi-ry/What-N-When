@@ -16,7 +16,7 @@
     <rescap:Capability Name="runFullTrust" />
   </Capabilities>
   <Applications>
-    <Application Id="NotionCalendarWidget" Executable="notion-calendar-widget.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="NotionCalendarWidget" Executable="notion-calendar-widget.exe" EntryPoint="windows.fullTrustApplication">
       <uap:VisualElements AppListEntry="none" DisplayName="Notion Calendar Widget" Description="Notion Calendar desktop widget" BackgroundColor="#1a1a1a" Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\Logo.png" />
     </Application>
   </Applications>
