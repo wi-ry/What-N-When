@@ -1,3 +1,9 @@
+## [2.1.6](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.5...v2.1.6) (2026-09-10)
+
+### Bug Fixes
+
+* **msix:** use Store-reserved package identity name and publisher ([ccae338](https://github.com/wi-ry/Notion-Calendar-Widget/commit/ccae338257a9270496784a0e8d8bc57cfb02fa45))
+
 ## [2.1.5](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.4...v2.1.5) (2026-09-10)
 
 ### Bug Fixes
