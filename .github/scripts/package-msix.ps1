@@ -74,9 +74,17 @@ Set-Content (Join-Path $stagingDirectory 'AppxManifest.xml') $manifest -Encoding
 
 $makeAppx = Get-Command makeappx.exe -ErrorAction SilentlyContinue
 if (-not $makeAppx) {
-    $makeAppx = Get-ChildItem "$env:ProgramFiles(x86)\Windows Kits\10\bin\*\x64\makeappx.exe" -ErrorAction SilentlyContinue |
-        Sort-Object FullName -Descending |
-        Select-Object -First 1
+  $sdkRoots = @(
+    $env:WindowsSdkDir,
+    ${env:ProgramFiles(x86)},
+    $env:ProgramFiles
+  ) | Where-Object { $_ } | ForEach-Object {
+    Join-Path $_ 'Windows Kits\10\bin'
+  }
+  $makeAppx = Get-ChildItem -Path $sdkRoots -Filter 'makeappx.exe' -File -Recurse -ErrorAction SilentlyContinue |
+    Where-Object { $_.Directory.Name -eq 'x64' } |
+    Sort-Object FullName -Descending |
+    Select-Object -First 1
 }
 if (-not $makeAppx) {
     throw 'makeappx.exe was not found in PATH or the Windows SDK.'
