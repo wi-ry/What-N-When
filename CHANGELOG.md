@@ -1,3 +1,9 @@
+## [2.1.5](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.4...v2.1.5) (2026-09-10)
+
+### Bug Fixes
+
+* **msix:** remove AppListEntry=none to avoid headless app store validation error ([feb99fe](https://github.com/wi-ry/Notion-Calendar-Widget/commit/feb99fe46d1726ae97b1c74c0ae1fd3f43142001))
+
 ## [2.1.4](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.3...v2.1.4) (2026-09-10)
 
 ### Bug Fixes
