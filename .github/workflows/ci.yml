@@ -50,6 +50,11 @@ jobs:
         if: github.event_name == 'push'
         run: npm run build
 
+      - name: Package MSIX
+        if: github.event_name == 'push'
+        shell: pwsh
+        run: .github/scripts/package-msix.ps1
+
       - name: Upload build artifact
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v7
@@ -58,4 +63,5 @@ jobs:
           path: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/msix/*.msix
           if-no-files-found: error
