@@ -47,28 +47,8 @@ try {
     $icon.Dispose()
 }
 
-$manifest = @"
-<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedCapabilities">
-  <Identity Name="ca.willryan.notioncalendarwidget" Publisher="CN=Notion Calendar Widget" Version="$packageVersion" />
-  <Properties>
-    <DisplayName>Notion Calendar Widget</DisplayName>
-    <PublisherDisplayName>Will Ryan</PublisherDisplayName>
-    <Logo>Assets\Logo.png</Logo>
-  </Properties>
-  <Resources>
-    <Resource Language="en-us" />
-  </Resources>
-  <Applications>
-    <Application Id="NotionCalendarWidget" Executable="notion-calendar-widget.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements AppListEntry="none" DisplayName="Notion Calendar Widget" Description="Notion Calendar desktop widget" BackgroundColor="#1a1a1a" Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\Logo.png" />
-    </Application>
-  </Applications>
-  <Capabilities>
-    <rescap:Capability Name="runFullTrust" />
-  </Capabilities>
-</Package>
-"@
+$manifestTemplatePath = Join-Path $PSScriptRoot 'AppxManifest.template.xml'
+$manifest = (Get-Content $manifestTemplatePath -Raw) -replace '\{\{PackageVersion\}\}', $packageVersion
 
 Set-Content (Join-Path $stagingDirectory 'AppxManifest.xml') $manifest -Encoding utf8
 
