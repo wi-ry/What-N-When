@@ -1,3 +1,9 @@
+## [2.2.1](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.2.0...v2.2.1) (2026-09-12)
+
+### Bug Fixes
+
+* resolve issue with app moving to foreground unexpectedly ([f597fdc](https://github.com/wi-ry/Notion-Calendar-Widget/commit/f597fdc04ceb0e0dcc1fde9ebe5e1357cba83740))
+
 ## [2.2.0](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.1.6...v2.2.0) (2026-09-12)
 
 ### Features
