@@ -20,7 +20,8 @@
         "minHeight": 200,
         "skipTaskbar": true,
         "shadow": true,
-        "backgroundColor": "#1a1a1a"
+        "backgroundColor": "#1a1a1a",
+        "alwaysOnBottom": true
       }
     ],
     "security": {

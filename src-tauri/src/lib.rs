@@ -329,7 +329,6 @@ fn restore_main_window(app: &AppHandle) -> Result<(), String> {
             fade_main_window(app, 0, u8::MAX, false, false);
         }
         WIDGET_IS_HIDING.store(false, Ordering::Relaxed);
-        let _ = window.set_focus();
         Ok(())
     } else {
         Err("Main window was not found".into())
