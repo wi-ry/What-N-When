@@ -2,7 +2,17 @@
 
 A desktop widget for Windows that embeds https://calendar.notion.so/ in a frameless Tauri (Rust + WebView2) window.
 
-<img width="852" height="917" alt="image" src="https://github.com/user-attachments/assets/70895e72-4a71-4e9c-b11f-0b555e9d2954" />
+<img width="1028" height="965" alt="Main UI - Dark Mode" src="https://github.com/user-attachments/assets/4f1f151c-05a9-48e6-9ec5-019de63e2193" />
+
+- Main UI - Dark Mode
+
+<img width="1029" height="967" alt="Main UI - Light Mode" src="https://github.com/user-attachments/assets/27f9a768-d666-4ea6-aee7-9fdbe4f820a1" />
+
+- Main UI - Light Mode
+
+<img width="747" height="606" alt="Settings window" src="https://github.com/user-attachments/assets/89b3ba8c-7062-4555-91e5-73543e2f5d96" />
+
+- Settings window
 
 
 ## Features
