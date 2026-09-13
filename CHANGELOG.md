@@ -1,3 +1,9 @@
+## [2.2.2](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.2.1...v2.2.2) (2026-09-13)
+
+### Bug Fixes
+
+* improved icon ([f4a4d0e](https://github.com/wi-ry/Notion-Calendar-Widget/commit/f4a4d0e40fdff9a3baa025052fa367212b5cd816))
+
 ## [2.2.1](https://github.com/wi-ry/Notion-Calendar-Widget/compare/v2.2.0...v2.2.1) (2026-09-12)
 
 ### Bug Fixes
