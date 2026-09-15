@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "What-N-When",
   "version": "2.0.0",
-  "identifier": "ca.willryan.notioncalendarwidget",
+  "identifier": "ca.willryan.whatnwhen",
   "build": {
     "frontendDist": "../web"
   },
@@ -11,7 +11,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Notion Calendar",
+        "title": "What-N-When",
         "width": 800,
         "height": 600,
         "decorations": false,
@@ -31,7 +31,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": ["../web/assets/notion-calendar.ico"],
+    "icon": ["../web/assets/icon.ico"],
     "windows": {
       "nsis": {
         "installMode": "currentUser"
