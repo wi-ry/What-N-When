@@ -1,4 +1,4 @@
-# Notion Calendar Widget
+# What-N-When
 
 A desktop widget for Windows that embeds https://calendar.notion.so/ in a frameless Tauri (Rust + WebView2) window.
 

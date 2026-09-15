@@ -2,7 +2,7 @@
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedCapabilities" IgnorableNamespaces="rescap">
   <Identity Name="56890AusnadianProductions.NotionCalendarWidget" Publisher="CN=A878E59E-93F9-435A-9DFB-177C285947A6" Version="{{PackageVersion}}" />
   <Properties>
-    <DisplayName>Notion Calendar Widget</DisplayName>
+    <DisplayName>What-N-When</DisplayName>
     <PublisherDisplayName>Will Ryan</PublisherDisplayName>
     <Logo>Assets\Logo.png</Logo>
   </Properties>
@@ -17,7 +17,7 @@
   </Capabilities>
   <Applications>
     <Application Id="NotionCalendarWidget" Executable="notion-calendar-widget.exe" EntryPoint="windows.fullTrustApplication">
-      <uap:VisualElements DisplayName="Notion Calendar Widget" Description="Notion Calendar desktop widget" BackgroundColor="#1a1a1a" Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\Logo.png" />
+      <uap:VisualElements DisplayName="What-N-When" Description="Notion Calendar desktop widget" BackgroundColor="#1a1a1a" Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\Logo.png" />
     </Application>
   </Applications>
 </Package>

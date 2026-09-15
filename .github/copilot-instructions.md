@@ -1,6 +1,6 @@
 <!-- Workspace-specific instructions for GitHub Copilot. -->
 
-# Notion Calendar Widget - Development Instructions
+# What-N-When - Development Instructions
 
 This is a Windows desktop widget built with Tauri 2, Rust, and WebView2. The frontend is a small set of static HTML, CSS, and JavaScript files in `web/`; there is no React, bundler, C# project, or .NET project in this repository.
 
