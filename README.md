@@ -1,6 +1,6 @@
 # What-N-When
 
-A desktop widget for Windows that embeds https://calendar.notion.so/ in a frameless Tauri (Rust + WebView2) window.
+A desktop widget for Windows that embeds [Notion Calendar](https://calendar.notion.so) in a frameless Tauri (Rust + WebView2) window.
 
 <img width="1028" height="965" alt="Main UI - Dark Mode" src="https://github.com/user-attachments/assets/4f1f151c-05a9-48e6-9ec5-019de63e2193" />
 
