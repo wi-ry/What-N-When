@@ -85,7 +85,7 @@ jobs:
         shell: pwsh
         run: |
           Copy-Item `
-            "src-tauri/target/release/notion-calendar-widget.exe" `
+            "src-tauri/target/release/what-n-when.exe" `
             "src-tauri/target/release/Notion.Calendar.Widget_${{ needs.release.outputs.version }}_x64-portable.exe"
 
       - name: Upload artifact to release

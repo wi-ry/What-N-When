@@ -24,7 +24,7 @@ while ($versionParts.Count -lt 4) {
 }
 $packageVersion = ($versionParts -join '.')
 
-$executablePath = Join-Path $releaseDirectory 'notion-calendar-widget.exe'
+$executablePath = Join-Path $releaseDirectory 'what-n-when.exe'
 if (-not (Test-Path $executablePath)) {
     throw "Release executable not found: $executablePath"
 }
@@ -34,7 +34,7 @@ New-Item $stagingDirectory -ItemType Directory -Force | Out-Null
 New-Item (Join-Path $stagingDirectory 'Assets') -ItemType Directory -Force | Out-Null
 New-Item $outputDirectory -ItemType Directory -Force | Out-Null
 
-Copy-Item $executablePath (Join-Path $stagingDirectory 'notion-calendar-widget.exe')
+Copy-Item $executablePath (Join-Path $stagingDirectory 'what-n-when.exe')
 
 Add-Type -AssemblyName System.Drawing
 $icon = [System.Drawing.Icon]::ExtractAssociatedIcon($iconPath)
