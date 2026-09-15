@@ -9,7 +9,7 @@ $releaseDirectory = Join-Path $repositoryRoot 'src-tauri\target\release'
 $stagingDirectory = Join-Path $releaseDirectory 'msix-staging'
 $outputDirectory = Join-Path $releaseDirectory 'bundle\msix'
 $configPath = Join-Path $repositoryRoot 'src-tauri\tauri.conf.json'
-$iconPath = Join-Path $repositoryRoot 'web\assets\notion-calendar.ico'
+$iconPath = Join-Path $repositoryRoot 'web\assets\icon.ico'
 
 if (-not $Version) {
     $Version = (Get-Content $configPath -Raw | ConvertFrom-Json).version
