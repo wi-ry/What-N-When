@@ -143,7 +143,7 @@ BREAKING CHANGE: old settings.json format no longer compatible
 
 Window bounds and options are stored in:
 
-`%APPDATA%\ca.willryan.notioncalendarwidget\settings.json`
+`%APPDATA%\ca.willryan.whatnwhen\settings.json`
 
 ## Notes
 

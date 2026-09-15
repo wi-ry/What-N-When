@@ -1,3 +1,13 @@
+## [2.2.3](https://github.com/wi-ry/What-N-When/compare/v2.2.2...v2.2.3) (2026-09-15)
+
+### Bug Fixes
+
+* rename application to What-N-When ([58692b5](https://github.com/wi-ry/What-N-When/commit/58692b58284daf6a4ca94f02b4508c835dea7ec2))
+
+### Maintenance
+
+* update cargo lock ([47aa6b5](https://github.com/wi-ry/What-N-When/commit/47aa6b5b3b07371aa89aa2933ea7a5ebed639bb2))
+
 ## [2.2.2](https://github.com/wi-ry/What-N-When/compare/v2.2.1...v2.2.2) (2026-09-13)
 
 ### Bug Fixes
