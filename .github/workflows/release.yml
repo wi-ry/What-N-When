@@ -86,7 +86,7 @@ jobs:
         run: |
           Copy-Item `
             "src-tauri/target/release/what-n-when.exe" `
-            "src-tauri/target/release/Notion.Calendar.Widget_${{ needs.release.outputs.version }}_x64-portable.exe"
+            "src-tauri/target/release/What-N-When_${{ needs.release.outputs.version }}_x64-portable.exe"
 
       - name: Upload artifact to release
         uses: softprops/action-gh-release@v3
@@ -96,4 +96,4 @@ jobs:
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/msix/*.msix
-            src-tauri/target/release/Notion.Calendar.Widget_${{ needs.release.outputs.version }}_x64-portable.exe
+            src-tauri/target/release/What-N-When_${{ needs.release.outputs.version }}_x64-portable.exe

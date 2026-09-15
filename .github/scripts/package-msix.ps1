@@ -71,7 +71,7 @@ if (-not $makeAppx) {
 }
 $makeAppxPath = if ($makeAppx.PSObject.Properties.Name -contains 'Source') { $makeAppx.Source } else { $makeAppx.FullName }
 
-$packagePath = Join-Path $outputDirectory "Notion.Calendar.Widget_${packageVersion}_x64.msix"
+$packagePath = Join-Path $outputDirectory "What-N-When_${packageVersion}_x64.msix"
 Remove-Item $packagePath -Force -ErrorAction SilentlyContinue
 & $makeAppxPath pack /d $stagingDirectory /p $packagePath /nv
 if ($LASTEXITCODE -ne 0) {
