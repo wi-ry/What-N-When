@@ -1,3 +1,9 @@
+## [3.0.1](https://github.com/wi-ry/What-N-When/compare/v3.0.0...v3.0.1) (2026-09-15)
+
+### Bug Fixes
+
+* even more name changes missed ([33fd1c1](https://github.com/wi-ry/What-N-When/commit/33fd1c170e4f17ea5787dcc999ce192208d0c5d4))
+
 ## [3.0.0](https://github.com/wi-ry/What-N-When/compare/v2.2.3...v3.0.0) (2026-09-15)
 
 ### ⚠ BREAKING CHANGES
