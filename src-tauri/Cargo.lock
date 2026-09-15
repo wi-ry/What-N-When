@@ -1888,19 +1888,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
-name = "what-n-when"
-version = "2.0.0"
-dependencies = [
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-autostart",
- "windows-sys 0.61.2",
- "winreg 0.56.0",
-]
-
-[[package]]
 name = "num-conv"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4021,6 +4008,19 @@ dependencies = [
  "thiserror 2.0.20",
  "windows",
  "windows-core 0.61.2",
+]
+
+[[package]]
+name = "what-n-when"
+version = "2.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-autostart",
+ "windows-sys 0.61.2",
+ "winreg 0.56.0",
 ]
 
 [[package]]
