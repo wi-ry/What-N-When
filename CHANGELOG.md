@@ -1,3 +1,17 @@
+## [3.0.0](https://github.com/wi-ry/What-N-When/compare/v2.2.3...v3.0.0) (2026-09-15)
+
+### ⚠ BREAKING CHANGES
+
+* Complete renaming of application
+
+### Features
+
+* Complete renaming of application ([0337d29](https://github.com/wi-ry/What-N-When/commit/0337d291653536e53f9ef1ef0e35d273b989d2e8))
+
+### Bug Fixes
+
+* resolve issue with icon path ([94e2b54](https://github.com/wi-ry/What-N-When/commit/94e2b54d05fb3c0a8510bd3a1d68060c87b109b8))
+
 ## [2.2.3](https://github.com/wi-ry/What-N-When/compare/v2.2.2...v2.2.3) (2026-09-15)
 
 ### Bug Fixes
