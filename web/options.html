@@ -227,14 +227,25 @@
         <span class="setting-description">Double-click an empty desktop area to toggle the widget.</span>
         <span class="mode-picker" id="desktop-toggle-mode" role="radiogroup" aria-label="Desktop double-click action">
           <label>
-            <input type="radio" name="desktop-toggle-action" value="hide" checked>
+            <input type="radio" name="desktop-toggle-action" value="hide" checked onchange="updateTransparencySectionVisibility()">
             <span>Hide widget</span>
           </label>
           <label>
-            <input type="radio" name="desktop-toggle-action" value="transparent">
+            <input type="radio" name="desktop-toggle-action" value="transparent" onchange="updateTransparencySectionVisibility()">
             <span>Make transparent</span>
           </label>
         </span>
+      </span>
+    </label>
+  </section>
+
+  <section class="settings-group transparency-section" aria-labelledby="transparency-settings-title">
+    <h2 class="group-title" id="transparency-settings-title">Transparency</h2>
+    <label class="setting" for="transparency-level">
+      <input type="range" id="transparency-level" min="0" max="255" step="1" value="64">
+      <span class="setting-copy">
+        <span class="setting-title">Transparency level</span>
+        <span class="setting-description">0 = fully opaque, 255 = fully transparent</span>
       </span>
     </label>
   </section>

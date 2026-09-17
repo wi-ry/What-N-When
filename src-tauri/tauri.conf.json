@@ -31,6 +31,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "Will Ryan",
     "icon": ["../web/assets/icon.ico"],
     "windows": {
       "nsis": {
