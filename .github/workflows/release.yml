@@ -97,3 +97,18 @@ jobs:
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/msix/*.msix
             src-tauri/target/release/What-N-When_${{ needs.release.outputs.version }}_x64-portable.exe
+
+      - name: Setup MSStore CLI
+        uses: microsoft/setup-msstore-cli@v1
+
+      - name: Configure MSStore CLI
+        run: |
+          msstore reconfigure `
+            --tenantId ${{ secrets.TENANT_ID }} `
+            --sellerId ${{ secrets.SELLER_ID }} `
+            --clientId ${{ secrets.CLIENT_ID }} `
+            --clientSecret ${{ secrets.SECRET_VALUE }}
+
+      - name: Publish to Store
+        run: |
+          msstore publish src-tauri/target/release/bundle/msix/*.msix -id ${{ secrets.STORE_ID }} -v --uploadTimeout 300
