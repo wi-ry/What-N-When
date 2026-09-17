@@ -1,3 +1,13 @@
+## [3.1.0](https://github.com/wi-ry/What-N-When/compare/v3.0.1...v3.1.0) (2026-09-17)
+
+### Features
+
+* **options:** add real-time transparency preview and fix settings persistence ([41adb6b](https://github.com/wi-ry/What-N-When/commit/41adb6b18d7167da5ffed800def08f4abc0cf9b6))
+
+### Bug Fixes
+
+* remove dashes from application id ([2c31a3c](https://github.com/wi-ry/What-N-When/commit/2c31a3c3174d32cf6bd3fd6396268d1556b045c7))
+
 ## [3.0.1](https://github.com/wi-ry/What-N-When/compare/v3.0.0...v3.0.1) (2026-09-15)
 
 ### Bug Fixes
