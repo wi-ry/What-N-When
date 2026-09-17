@@ -59,7 +59,6 @@ static DESKTOP_TOGGLE_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 const HIDE_WIDGET_ACTION: u8 = 0;
 const TRANSPARENT_WIDGET_ACTION: u8 = 1;
-const TRANSPARENT_WIDGET_OPACITY: u8 = 64;
 const TOGGLE_FADE_STEPS: u16 = 13;
 const TOGGLE_FADE_STEP_DURATION_MS: u64 = 20;
 
@@ -114,6 +113,7 @@ struct Options {
     open_at_login: bool,
     toggle_on_desktop_double_click: bool,
     desktop_toggle_action: DesktopToggleAction,
+    transparency_level: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq)]
@@ -140,6 +140,7 @@ impl Default for Options {
             open_at_login: false,
             toggle_on_desktop_double_click: false,
             desktop_toggle_action: DesktopToggleAction::default(),
+            transparency_level: 64,
         }
     }
 }
@@ -299,20 +300,22 @@ fn fade_main_window(app: &AppHandle, from: u8, to: u8, hide_after_fade: bool, ig
 }
 
 #[cfg(windows)]
-fn set_main_window_transparent(app: &AppHandle, transparent: bool) {
+fn set_main_window_transparent(app: &AppHandle, transparent: bool, transparency_level: u8) {
+    // Invert transparency_level: UI uses 0=opaque, 255=transparent; Windows API uses 0=transparent, 255=opaque
+    let opacity = u8::MAX - transparency_level;
     if transparent {
         fade_main_window(
             app,
             u8::MAX,
-            TRANSPARENT_WIDGET_OPACITY,
+            opacity,
             false,
-            true,
+            false, // Don't ignore cursor events - allow interaction with transparent widget
         );
     } else {
-        if let Some(window) = app.get_window("main") {
-            let _ = window.set_ignore_cursor_events(false);
+        if let Some(_window) = app.get_window("main") {
+            let _ = _window.set_ignore_cursor_events(false);
         }
-        fade_main_window(app, TRANSPARENT_WIDGET_OPACITY, u8::MAX, false, false);
+        fade_main_window(app, opacity, u8::MAX, false, false);
     }
     WIDGET_IS_TRANSPARENT.store(transparent, Ordering::Relaxed);
 }
@@ -321,7 +324,10 @@ fn set_main_window_transparent(app: &AppHandle, transparent: bool) {
 fn restore_main_window(app: &AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_window("main") {
         if WIDGET_IS_TRANSPARENT.swap(false, Ordering::Relaxed) {
-            set_main_window_transparent(app, false);
+            if let Some(_window) = app.get_window("main") {
+                let options = load_settings(&app).options;
+                set_main_window_transparent(app, false, options.transparency_level);
+            }
         }
         if !window.is_visible().map_err(|error| error.to_string())? {
             set_main_window_opacity(&window, 0);
@@ -348,7 +354,10 @@ fn perform_main_window_toggle(app: &AppHandle) -> Result<(), String> {
     {
         restore_main_window(app)?;
     } else if DESKTOP_TOGGLE_ACTION.load(Ordering::Relaxed) == TRANSPARENT_WIDGET_ACTION {
-        set_main_window_transparent(app, true);
+        if let Some(_window) = app.get_window("main") {
+            let options = load_settings(&app).options;
+            set_main_window_transparent(app, true, options.transparency_level);
+        }
     } else {
         WIDGET_IS_HIDING.store(true, Ordering::Relaxed);
         fade_main_window(app, u8::MAX, 0, true, false);
@@ -510,6 +519,7 @@ fn save_options(
     open_at_login: Option<bool>,
     toggle_on_desktop_double_click: Option<bool>,
     desktop_toggle_action: Option<DesktopToggleAction>,
+    transparency_level: Option<u8>,
 ) -> Options {
     let mut settings = load_settings(&app);
 
@@ -542,9 +552,44 @@ fn save_options(
             let _ = restore_main_window(&app);
         }
     }
+    if let Some(v) = transparency_level {
+        settings.options.transparency_level = v;
+    }
 
     save_settings(&app, &settings);
+
+    // If widget is currently transparent, apply the new transparency level immediately
+    #[cfg(windows)]
+    if WIDGET_IS_TRANSPARENT.load(Ordering::Relaxed) {
+        let opacity = u8::MAX - settings.options.transparency_level;
+        let app_clone = app.clone();
+        let _ = app_clone.clone().run_on_main_thread(move || {
+            if let Some(window) = app_clone.get_window("main") {
+                set_main_window_opacity(&window, opacity);
+            }
+        });
+    }
+
     settings.options
+}
+
+#[tauri::command]
+fn update_transparency_level(app: AppHandle, transparency_level: u8) {
+    let mut settings = load_settings(&app);
+    settings.options.transparency_level = transparency_level;
+    save_settings(&app, &settings);
+
+    // If widget is currently transparent, apply the new transparency level immediately
+    #[cfg(windows)]
+    if WIDGET_IS_TRANSPARENT.load(Ordering::Relaxed) {
+        let opacity = u8::MAX - transparency_level;
+        let app_clone = app.clone();
+        let _ = app_clone.clone().run_on_main_thread(move || {
+            if let Some(window) = app_clone.get_window("main") {
+                set_main_window_opacity(&window, opacity);
+            }
+        });
+    }
 }
 
 #[tauri::command]
@@ -735,6 +780,7 @@ pub fn run() {
             get_desktop_listener_debug,
             test_desktop_toggle,
             save_options,
+            update_transparency_level,
             reset_options,
             close_window,
             refresh_calendar,
