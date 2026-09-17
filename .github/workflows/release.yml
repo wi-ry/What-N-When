@@ -111,4 +111,4 @@ jobs:
 
       - name: Publish to Store
         run: |
-          msstore publish src-tauri/target/release/bundle/msix -id ${{ secrets.STORE_ID }} -v --uploadTimeout 300
+          msstore publish -i src-tauri/target/release/bundle/msix -id ${{ secrets.STORE_ID }} -v --uploadTimeout 300
