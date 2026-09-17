@@ -1,3 +1,9 @@
+## [3.2.0](https://github.com/wi-ry/What-N-When/compare/v3.1.0...v3.2.0) (2026-09-17)
+
+### Features
+
+* add auto store publishing ([f1f69e4](https://github.com/wi-ry/What-N-When/commit/f1f69e44f1e58e2e14b7bce73bce9258da1fce53))
+
 ## [3.1.0](https://github.com/wi-ry/What-N-When/compare/v3.0.1...v3.1.0) (2026-09-17)
 
 ### Features
