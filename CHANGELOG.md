@@ -1,3 +1,10 @@
+## [3.2.1](https://github.com/wi-ry/What-N-When/compare/v3.2.0...v3.2.1) (2026-09-17)
+
+### Bug Fixes
+
+* add missing -i to command ([cf44217](https://github.com/wi-ry/What-N-When/commit/cf442175c2f8aa3163ca2436278b2ff5b957117a))
+* correct file path ([249d06f](https://github.com/wi-ry/What-N-When/commit/249d06f09833431338b367ab4b9b4c4e1c5f231d))
+
 ## [3.2.0](https://github.com/wi-ry/What-N-When/compare/v3.1.0...v3.2.0) (2026-09-17)
 
 ### Features
