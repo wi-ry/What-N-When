@@ -1,3 +1,9 @@
+## [3.2.2](https://github.com/wi-ry/What-N-When/compare/v3.2.1...v3.2.2) (2026-09-19)
+
+### Bug Fixes
+
+* remove debug message on startup ([460c588](https://github.com/wi-ry/What-N-When/commit/460c58888fa31f97b9bfa1e6bc69133d71d9f136))
+
 ## [3.2.1](https://github.com/wi-ry/What-N-When/compare/v3.2.0...v3.2.1) (2026-09-17)
 
 ### Bug Fixes
