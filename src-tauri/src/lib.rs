@@ -446,7 +446,6 @@ fn start_desktop_double_click_listener(app: AppHandle) {
                 return;
             }
             DESKTOP_HOOK_INSTALLED.store(true, Ordering::Relaxed);
-            eprintln!("Desktop double-click listener installed.");
 
             let mut message = std::mem::zeroed::<MSG>();
             while GetMessageW(&mut message, std::ptr::null_mut(), 0, 0) > 0 {}
