@@ -13,6 +13,19 @@ const RESIZE_DIRECTION = {
 const appWindow = window.__TAURI__.window.getCurrentWindow();
 const invoke = window.__TAURI__.core.invoke;
 
+async function initDevBadge() {
+  try {
+    const isDebug = await invoke('is_debug_build');
+    if (isDebug) {
+      document.body.classList.add('dev-build');
+    }
+  } catch (e) {
+    console.error('Failed to check debug build status:', e);
+  }
+}
+
+initDevBadge();
+
 document.querySelectorAll('.resize-handle').forEach((handle) => {
   handle.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
