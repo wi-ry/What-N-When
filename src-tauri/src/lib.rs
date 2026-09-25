@@ -13,17 +13,19 @@ use tauri::{
 use tauri_plugin_autostart::ManagerExt;
 
 #[cfg(windows)]
-use windows_sys::Win32::Foundation::{LPARAM, LRESULT, POINT, WPARAM};
+use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
+#[cfg(windows)]
+use windows_sys::Win32::Graphics::Gdi::ScreenToClient;
 #[cfg(windows)]
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 #[cfg(windows)]
 use windows_sys::Win32::System::SystemInformation::GetTickCount;
 #[cfg(windows)]
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    CallNextHookEx, GetClassNameW, GetMessageW, GetWindowLongPtrW, GetParent,
+    CallNextHookEx, GetClassNameW, GetMessageW, GetWindowLongPtrW, GetParent, SendMessageW,
     SetLayeredWindowAttributes, SetWindowLongPtrW, SetWindowsHookExW, GWL_EXSTYLE, HC_ACTION,
-    LWA_ALPHA, MSG, MSLLHOOKSTRUCT, WH_MOUSE_LL, WM_LBUTTONDBLCLK, WM_LBUTTONDOWN,
-    WS_EX_LAYERED, WindowFromPoint,
+    LWA_ALPHA, MSG, MSLLHOOKSTRUCT, WH_MOUSE_LL, WM_LBUTTONDBLCLK, WM_LBUTTONDOWN, WS_EX_LAYERED,
+    WindowFromPoint,
 };
 
 #[cfg(windows)]
@@ -56,11 +58,30 @@ static DESKTOP_TOGGLE_UI_THREAD_COUNT: AtomicUsize = AtomicUsize::new(0);
 static DESKTOP_MAIN_WINDOW_FOUND_COUNT: AtomicUsize = AtomicUsize::new(0);
 #[cfg(windows)]
 static DESKTOP_TOGGLE_COUNT: AtomicUsize = AtomicUsize::new(0);
+#[cfg(windows)]
+static DESKTOP_ICON_CLICK_IGNORED_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 const HIDE_WIDGET_ACTION: u8 = 0;
 const TRANSPARENT_WIDGET_ACTION: u8 = 1;
 const TOGGLE_FADE_STEPS: u16 = 13;
 const TOGGLE_FADE_STEP_DURATION_MS: u64 = 20;
+
+// LVM_HITTEST (LVM_FIRST + 18): asks a SysListView32 control whether a given
+// client-coordinate point falls on an item (icon) or on empty list space.
+#[cfg(windows)]
+const LVM_FIRST: u32 = 0x1000;
+#[cfg(windows)]
+const LVM_HITTEST: u32 = LVM_FIRST + 18;
+
+#[cfg(windows)]
+#[repr(C)]
+struct LvHitTestInfo {
+    pt: POINT,
+    flags: u32,
+    i_item: i32,
+    i_sub_item: i32,
+    i_group: i32,
+}
 
 #[cfg(windows)]
 #[derive(Clone, Copy)]
@@ -165,6 +186,7 @@ struct DesktopListenerDebug {
     toggle_ui_thread_count: usize,
     main_window_found_count: usize,
     toggle_count: usize,
+    icon_click_ignored_count: usize,
     last_target: String,
     last_toggle_result: String,
 }
@@ -194,17 +216,24 @@ fn save_settings(app: &AppHandle, settings: &Settings) {
     }
 }
 
+/// Walks up the ancestor chain starting at `window`, classifying whether the click
+/// landed on the desktop surface (Progman/WorkerW/SHELLDLL_DefView/SysListView32)
+/// as opposed to a File Explorer window. Returns
+/// (is_desktop_surface, joined class-name chain for diagnostics, is_progman_window).
+///
+/// Note: this alone cannot distinguish a click on a desktop *icon* from a click on
+/// empty desktop space, since both live inside the same SysListView32 control and
+/// report identical class names. See `desktop_click_hits_icon` for that distinction.
 #[cfg(windows)]
-unsafe fn desktop_window_details(point: POINT) -> (bool, String) {
-    let mut window = WindowFromPoint(point);
+unsafe fn desktop_window_details(mut window: HWND) -> (bool, String, bool) {
     if window.is_null() {
-        return (false, "No window at pointer".into());
+        return (false, "No window at pointer".into(), false);
     }
 
-    // Explorer commonly places the clickable desktop surface below several child windows.
     let mut classes = Vec::new();
     let mut is_file_explorer_window = false;
     let mut is_desktop_surface = false;
+    let mut is_progman_window = false;
     for _ in 0..8 {
         let mut class_name = [0u16; 32];
         let length = GetClassNameW(window, class_name.as_mut_ptr(), class_name.len() as i32);
@@ -214,6 +243,7 @@ unsafe fn desktop_window_details(point: POINT) -> (bool, String) {
             class_name.as_str(),
             "Progman" | "WorkerW" | "SHELLDLL_DefView" | "SysListView32"
         );
+        is_progman_window |= class_name.as_str() == "Progman";
         classes.push(class_name);
 
         window = GetParent(window);
@@ -222,7 +252,41 @@ unsafe fn desktop_window_details(point: POINT) -> (bool, String) {
         }
     }
 
-    (is_desktop_surface && !is_file_explorer_window, classes.join(" > "))
+    (
+        is_desktop_surface && !is_file_explorer_window && is_progman_window,
+        classes.join(" > "),
+        is_progman_window,
+    )
+}
+
+/// True if `screen_point` lands on an actual desktop icon inside the SysListView32
+/// control at `hwnd`, rather than on empty desktop space. Used to make sure
+/// double-clicking an icon (to open it) never also toggles the widget.
+#[cfg(windows)]
+unsafe fn desktop_click_hits_icon(hwnd: HWND, screen_point: POINT) -> bool {
+    let mut client_point = screen_point;
+    if ScreenToClient(hwnd, &mut client_point) == 0 {
+        // If we can't map the point, don't assume it's an icon - fall back to the
+        // old class-name-only behavior for this click.
+        return false;
+    }
+
+    let mut hit_test = LvHitTestInfo {
+        pt: client_point,
+        flags: 0,
+        i_item: -1,
+        i_sub_item: 0,
+        i_group: 0,
+    };
+
+    SendMessageW(
+        hwnd,
+        LVM_HITTEST,
+        0,
+        &mut hit_test as *mut LvHitTestInfo as LPARAM,
+    );
+
+    hit_test.i_item >= 0
 }
 
 #[cfg(windows)]
@@ -324,10 +388,9 @@ fn set_main_window_transparent(app: &AppHandle, transparent: bool, transparency_
 fn restore_main_window(app: &AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_window("main") {
         if WIDGET_IS_TRANSPARENT.swap(false, Ordering::Relaxed) {
-            if let Some(_window) = app.get_window("main") {
-                let options = load_settings(&app).options;
-                set_main_window_transparent(app, false, options.transparency_level);
-            }
+            // `window` above already confirms the main window exists.
+            let options = load_settings(&app).options;
+            set_main_window_transparent(app, false, options.transparency_level);
         }
         if !window.is_visible().map_err(|error| error.to_string())? {
             set_main_window_opacity(&window, 0);
@@ -354,10 +417,9 @@ fn perform_main_window_toggle(app: &AppHandle) -> Result<(), String> {
     {
         restore_main_window(app)?;
     } else if DESKTOP_TOGGLE_ACTION.load(Ordering::Relaxed) == TRANSPARENT_WIDGET_ACTION {
-        if let Some(_window) = app.get_window("main") {
-            let options = load_settings(&app).options;
-            set_main_window_transparent(app, true, options.transparency_level);
-        }
+        // `window` above already confirms the main window exists.
+        let options = load_settings(&app).options;
+        set_main_window_transparent(app, true, options.transparency_level);
     } else {
         WIDGET_IS_HIDING.store(true, Ordering::Relaxed);
         fade_main_window(app, u8::MAX, 0, true, false);
@@ -399,16 +461,36 @@ unsafe extern "system" fn desktop_mouse_hook(
             DESKTOP_MOUSE_DOWN_COUNT.fetch_add(1, Ordering::Relaxed);
         }
         let point = (*(data as *const MSLLHOOKSTRUCT)).pt;
-        let (is_desktop_surface, target) = desktop_window_details(point);
+        let hovered_window = WindowFromPoint(point);
+        let (is_desktop_surface, target, is_progman_window) =
+            desktop_window_details(hovered_window);
         update_desktop_listener_target(target);
         if is_desktop_surface {
             DESKTOP_SURFACE_CLICK_COUNT.fetch_add(1, Ordering::Relaxed);
         }
 
-        if DESKTOP_DOUBLE_CLICK_ENABLED.load(Ordering::Relaxed) && is_desktop_surface && is_double_click_message {
+        // A click on the desktop surface can still be a click on an icon rather than
+        // empty space - both share the same SysListView32 class, so class name alone
+        // can't tell them apart. Hit-test against the list view to find out, and treat
+        // icon clicks like any other non-desktop-surface click (never toggles, and
+        // resets any pending double-click state).
+        let clicked_on_icon = is_desktop_surface && desktop_click_hits_icon(hovered_window, point);
+        if clicked_on_icon {
+            DESKTOP_ICON_CLICK_IGNORED_COUNT.fetch_add(1, Ordering::Relaxed);
+        }
+
+        if DESKTOP_DOUBLE_CLICK_ENABLED.load(Ordering::Relaxed)
+            && is_desktop_surface
+            && !clicked_on_icon
+            && is_double_click_message
+            && is_progman_window
+        {
             DESKTOP_DOUBLE_CLICK_COUNT.fetch_add(1, Ordering::Relaxed);
             toggle_main_window();
-        } else if DESKTOP_DOUBLE_CLICK_ENABLED.load(Ordering::Relaxed) && is_desktop_surface {
+        } else if DESKTOP_DOUBLE_CLICK_ENABLED.load(Ordering::Relaxed)
+            && is_desktop_surface
+            && !clicked_on_icon
+        {
             let tick = GetTickCount();
             let clicks = DESKTOP_CLICK.get_or_init(|| Mutex::new(None));
             if let Ok(mut previous_click) = clicks.lock() {
@@ -491,6 +573,7 @@ fn get_desktop_listener_debug() -> DesktopListenerDebug {
         toggle_ui_thread_count: DESKTOP_TOGGLE_UI_THREAD_COUNT.load(Ordering::Relaxed),
         main_window_found_count: DESKTOP_MAIN_WINDOW_FOUND_COUNT.load(Ordering::Relaxed),
         toggle_count: DESKTOP_TOGGLE_COUNT.load(Ordering::Relaxed),
+        icon_click_ignored_count: DESKTOP_ICON_CLICK_IGNORED_COUNT.load(Ordering::Relaxed),
         last_target,
         last_toggle_result,
     }
@@ -680,6 +763,14 @@ pub fn run() {
 
             let main_window = app.get_webview_window("main").unwrap();
             let main_base_window = app.get_window("main").unwrap();
+
+            // Add "DEV BUILD" prefix to title in debug builds
+            let title = if is_debug_build() {
+                "What-N-When (DEV BUILD)"
+            } else {
+                "What-N-When"
+            };
+            let _ = main_window.set_title(title);
 
             // Restore saved window position and size (stored as physical pixels).
             if settings.options.remember_window_bounds {

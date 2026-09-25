@@ -102,6 +102,26 @@
     .resize-top-right { top: 0; right: 0; width: 10px; height: 10px; cursor: nesw-resize; }
     .resize-bottom-right { right: 0; bottom: 0; width: 10px; height: 10px; cursor: nwse-resize; }
     .resize-bottom-left { left: 0; bottom: 0; width: 10px; height: 10px; cursor: nesw-resize; }
+
+    #dev-badge {
+    display: none;
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    background: #ff3b3b;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 9999;
+    pointer-events: none;
+    font-family: 'Segoe UI Variable Display', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  }
+
+  .dev-build #dev-badge {
+    display: block;
+  }
   </style>
 </head>
 <body>
@@ -117,6 +137,7 @@
 
   <div id="app-shell">
     <div id="titlebar" data-tauri-drag-region>
+      <div id="dev-badge">DEV BUILD</div>
       <span id="title">What-N-When</span>
       <button class="btn" id="options-btn" title="Options">
         <svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.14.6.62 1.08 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
