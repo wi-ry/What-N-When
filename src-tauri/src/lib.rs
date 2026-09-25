@@ -13,19 +13,29 @@ use tauri::{
 use tauri_plugin_autostart::ManagerExt;
 
 #[cfg(windows)]
-use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
+use windows_sys::Win32::Foundation::{CloseHandle, HANDLE, HWND, LPARAM, LRESULT, POINT, WPARAM};
 #[cfg(windows)]
 use windows_sys::Win32::Graphics::Gdi::ScreenToClient;
 #[cfg(windows)]
+use windows_sys::Win32::System::Diagnostics::Debug::{ReadProcessMemory, WriteProcessMemory};
+#[cfg(windows)]
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
+#[cfg(windows)]
+use windows_sys::Win32::System::Memory::{
+    VirtualAllocEx, VirtualFreeEx, MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE,
+};
 #[cfg(windows)]
 use windows_sys::Win32::System::SystemInformation::GetTickCount;
 #[cfg(windows)]
+use windows_sys::Win32::System::Threading::{
+    OpenProcess, PROCESS_VM_OPERATION, PROCESS_VM_READ, PROCESS_VM_WRITE,
+};
+#[cfg(windows)]
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    CallNextHookEx, GetClassNameW, GetMessageW, GetWindowLongPtrW, GetParent, SendMessageW,
-    SetLayeredWindowAttributes, SetWindowLongPtrW, SetWindowsHookExW, GWL_EXSTYLE, HC_ACTION,
-    LWA_ALPHA, MSG, MSLLHOOKSTRUCT, WH_MOUSE_LL, WM_LBUTTONDBLCLK, WM_LBUTTONDOWN, WS_EX_LAYERED,
-    WindowFromPoint,
+    CallNextHookEx, GetClassNameW, GetMessageW, GetWindowLongPtrW, GetParent,
+    GetWindowThreadProcessId, SendMessageW, SetLayeredWindowAttributes, SetWindowLongPtrW,
+    SetWindowsHookExW, GWL_EXSTYLE, HC_ACTION, LWA_ALPHA, MSG, MSLLHOOKSTRUCT, WH_MOUSE_LL,
+    WM_LBUTTONDBLCLK, WM_LBUTTONDOWN, WS_EX_LAYERED, WindowFromPoint,
 };
 
 #[cfg(windows)]
@@ -262,6 +272,12 @@ unsafe fn desktop_window_details(mut window: HWND) -> (bool, String, bool) {
 /// True if `screen_point` lands on an actual desktop icon inside the SysListView32
 /// control at `hwnd`, rather than on empty desktop space. Used to make sure
 /// double-clicking an icon (to open it) never also toggles the widget.
+///
+/// The desktop's list view is owned by explorer.exe, a different process from ours,
+/// so LVM_HITTEST's LPARAM can't just point at a struct in our own memory - explorer
+/// would try to read/write that address in *its* address space, which is invalid and
+/// crashes it. Instead we allocate a small buffer inside explorer's process, write the
+/// hit-test struct there, send the message, read the result back, then free the buffer.
 #[cfg(windows)]
 unsafe fn desktop_click_hits_icon(hwnd: HWND, screen_point: POINT) -> bool {
     let mut client_point = screen_point;
@@ -271,7 +287,46 @@ unsafe fn desktop_click_hits_icon(hwnd: HWND, screen_point: POINT) -> bool {
         return false;
     }
 
-    let mut hit_test = LvHitTestInfo {
+    let mut process_id: u32 = 0;
+    GetWindowThreadProcessId(hwnd, &mut process_id);
+    if process_id == 0 {
+        return false;
+    }
+
+    let process = OpenProcess(
+        PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,
+        0,
+        process_id,
+    );
+    if process.is_null() {
+        // Can't open the owning process (e.g. permissions) - don't guess, just treat
+        // this click as not being on an icon so we fall back to prior behavior.
+        return false;
+    }
+
+    let hit = desktop_hit_test_remote(process, hwnd, client_point);
+    CloseHandle(process);
+    hit
+}
+
+/// Runs the actual VirtualAllocEx/WriteProcessMemory/SendMessage/ReadProcessMemory
+/// dance against `process` (which owns `hwnd`) and returns whether `client_point`
+/// (already in `hwnd`'s client coordinates) landed on a list view item.
+#[cfg(windows)]
+unsafe fn desktop_hit_test_remote(process: HANDLE, hwnd: HWND, client_point: POINT) -> bool {
+    let size = std::mem::size_of::<LvHitTestInfo>();
+    let remote_buffer = VirtualAllocEx(
+        process,
+        std::ptr::null(),
+        size,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE,
+    );
+    if remote_buffer.is_null() {
+        return false;
+    }
+
+    let hit_test = LvHitTestInfo {
         pt: client_point,
         flags: 0,
         i_item: -1,
@@ -279,14 +334,33 @@ unsafe fn desktop_click_hits_icon(hwnd: HWND, screen_point: POINT) -> bool {
         i_group: 0,
     };
 
-    SendMessageW(
-        hwnd,
-        LVM_HITTEST,
-        0,
-        &mut hit_test as *mut LvHitTestInfo as LPARAM,
+    let mut hit_result = false;
+    let write_ok = WriteProcessMemory(
+        process,
+        remote_buffer,
+        &hit_test as *const LvHitTestInfo as *const _,
+        size,
+        std::ptr::null_mut(),
     );
 
-    hit_test.i_item >= 0
+    if write_ok != 0 {
+        SendMessageW(hwnd, LVM_HITTEST, 0, remote_buffer as LPARAM);
+
+        let mut readback = hit_test;
+        let read_ok = ReadProcessMemory(
+            process,
+            remote_buffer,
+            &mut readback as *mut LvHitTestInfo as *mut _,
+            size,
+            std::ptr::null_mut(),
+        );
+        if read_ok != 0 {
+            hit_result = readback.i_item >= 0;
+        }
+    }
+
+    VirtualFreeEx(process, remote_buffer, 0, MEM_RELEASE);
+    hit_result
 }
 
 #[cfg(windows)]
