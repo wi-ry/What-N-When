@@ -1,3 +1,9 @@
+## [3.2.3](https://github.com/wi-ry/What-N-When/compare/v3.2.2...v3.2.3) (2026-09-25)
+
+### Bug Fixes
+
+* prevent double-clicking icons for affecting the widget ([954b3fc](https://github.com/wi-ry/What-N-When/commit/954b3fc88d4d32aa5671df8ba03f67ee780ce094))
+
 ## [3.2.2](https://github.com/wi-ry/What-N-When/compare/v3.2.1...v3.2.2) (2026-09-19)
 
 ### Bug Fixes
