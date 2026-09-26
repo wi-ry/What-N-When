@@ -110,5 +110,7 @@ jobs:
             --clientSecret ${{ secrets.SECRET_VALUE }}
 
       - name: Publish to Store
+        shell: pwsh
         run: |
-          msstore publish -i src-tauri/target/release/bundle/msix -id ${{ secrets.STORE_ID }} -v --uploadTimeout 300
+          $msix = Get-ChildItem -Path src-tauri/target/release/bundle/msix -Filter *.msix | Select-Object -First 1
+          msstore publish $msix.FullName -id ${{ secrets.STORE_ID }} -v --uploadTimeout 300

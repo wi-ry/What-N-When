@@ -43,3 +43,4 @@ src-tauri/target/
 # OS
 .DS_Store
 Thumbs.db
+src-tauri/settings.json
