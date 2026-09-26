@@ -202,10 +202,15 @@ struct DesktopListenerDebug {
 }
 
 fn settings_path(app: &AppHandle) -> PathBuf {
-    app.path()
-        .app_data_dir()
-        .expect("failed to resolve app data dir")
-        .join("settings.json")
+    // In debug/dev mode, use a local settings.json for easier testing
+    if cfg!(debug_assertions) {
+        std::path::PathBuf::from("settings.json")
+    } else {
+        app.path()
+            .app_data_dir()
+            .expect("failed to resolve app data dir")
+            .join("settings.json")
+    }
 }
 
 fn load_settings(app: &AppHandle) -> Settings {
