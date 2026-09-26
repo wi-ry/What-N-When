@@ -1,3 +1,9 @@
+## [3.2.5](https://github.com/wi-ry/What-N-When/compare/v3.2.4...v3.2.5) (2026-09-26)
+
+### Bug Fixes
+
+* resolve issue with windows store publishing ([4199519](https://github.com/wi-ry/What-N-When/commit/4199519fab9ab258aabd89fb47e2e32ab5465743))
+
 ## [3.2.4](https://github.com/wi-ry/What-N-When/compare/v3.2.3...v3.2.4) (2026-09-26)
 
 ### Bug Fixes
