@@ -1,3 +1,9 @@
+## [3.2.4](https://github.com/wi-ry/What-N-When/compare/v3.2.3...v3.2.4) (2026-09-26)
+
+### Bug Fixes
+
+* local settings for dev builds ([0674562](https://github.com/wi-ry/What-N-When/commit/067456203de5676dc2f04d8784d5eaa99967ab1d))
+
 ## [3.2.3](https://github.com/wi-ry/What-N-When/compare/v3.2.2...v3.2.3) (2026-09-25)
 
 ### Bug Fixes
