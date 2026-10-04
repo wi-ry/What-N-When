@@ -1,3 +1,13 @@
+## [4.0.0](https://github.com/wi-ry/What-N-When/compare/v3.2.5...v4.0.0) (2026-10-04)
+
+### ⚠ BREAKING CHANGES
+
+* rewrite of rust code and link fix
+
+### Bug Fixes
+
+* rewrite of rust code and link fix ([897f838](https://github.com/wi-ry/What-N-When/commit/897f8388dc0367ffbcd6d429315e82e22f71cb18))
+
 ## [3.2.5](https://github.com/wi-ry/What-N-When/compare/v3.2.4...v3.2.5) (2026-09-26)
 
 ### Bug Fixes
