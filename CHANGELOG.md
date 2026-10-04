@@ -1,3 +1,10 @@
+## [4.0.1](https://github.com/wi-ry/What-N-When/compare/v4.0.0...v4.0.1) (2026-10-04)
+
+### Maintenance
+
+* **deps-dev:** bump @semantic-release/github from 12.0.9 to 12.0.10 ([dbf0d82](https://github.com/wi-ry/What-N-When/commit/dbf0d824c384cd5aaac2ee246b04db0afd3d8928))
+* **deps:** bump tauri-plugin-autostart in /src-tauri ([d807558](https://github.com/wi-ry/What-N-When/commit/d8075581e37b79be342a5f4bc55caa7cbd9491a6))
+
 ## [4.0.0](https://github.com/wi-ry/What-N-When/compare/v3.2.5...v4.0.0) (2026-10-04)
 
 ### ⚠ BREAKING CHANGES
