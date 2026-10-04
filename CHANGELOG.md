@@ -1,3 +1,9 @@
+## [4.0.2](https://github.com/wi-ry/What-N-When/compare/v4.0.1...v4.0.2) (2026-10-04)
+
+### Maintenance
+
+* upgrade npm packages ([029c473](https://github.com/wi-ry/What-N-When/commit/029c4737cf6a3d965d0c2acd296f63e7cdcbb174))
+
 ## [4.0.1](https://github.com/wi-ry/What-N-When/compare/v4.0.0...v4.0.1) (2026-10-04)
 
 ### Maintenance
