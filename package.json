@@ -1,7 +1,7 @@
 {
   "name": "what-n-when",
   "version": "4.0.1",
-  "description": "What-N-When is a desktop widget that embeds Notion Calendar",
+  "description": "What-N-When for Notion Calendar is a desktop widget that embeds Notion Calendar",
   "author": "Will Ryan <will@willryan.ca>",
   "scripts": {
     "dev": "tauri dev",
