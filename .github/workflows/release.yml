@@ -22,6 +22,7 @@ jobs:
       published: ${{ steps.semantic.outputs.new_release_published }}
       tag: ${{ steps.semantic.outputs.new_release_git_tag }}
       version: ${{ steps.semantic.outputs.new_release_version }}
+      notes: ${{ steps.semantic.outputs.new_release_notes }}
 
     steps:
       - name: Checkout
@@ -38,7 +39,7 @@ jobs:
             conventional-changelog-conventionalcommits@9.3.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          
   build-and-upload:
     needs: release
     if: ${{ needs.release.outputs.published == 'true' }}
@@ -95,7 +96,6 @@ jobs:
           files: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/msix/*.msix
             src-tauri/target/release/What-N-When_${{ needs.release.outputs.version }}_x64-portable.exe
 
       - name: Setup MSStore CLI
@@ -111,6 +111,31 @@ jobs:
 
       - name: Publish to Store
         shell: pwsh
+        env:
+          RELEASE_NOTES: ${{ needs.release.outputs.notes }}
+          STORE_ID: ${{ secrets.STORE_ID }}
         run: |
           $msix = Get-ChildItem -Path src-tauri/target/release/bundle/msix -Filter *.msix | Select-Object -First 1
-          msstore publish $msix.FullName -id ${{ secrets.STORE_ID }} -v --uploadTimeout 300
+
+          # 1. Upload the package, leave the submission as a draft
+          msstore publish $msix.FullName -id $env:STORE_ID --noCommit -v --uploadTimeout 300
+
+          # 2. Turn the markdown notes into plain text that fits the Store limit
+          $notes = $env:RELEASE_NOTES
+          $notes = $notes -replace '\[([^\]]+)\]\([^)]+\)', '$1'   # [text](url) -> text
+          $notes = $notes -replace '\s*\([0-9a-f]{7,}\)', ''       # drop "(abc1234)" commit refs
+          $notes = $notes -replace '(?m)^#+\s*', ''                # drop heading markers
+          $notes = $notes -replace '\*\*', ''                      # drop bold markers
+          $notes = $notes.Trim()
+          if ($notes.Length -gt 1500) { $notes = $notes.Substring(0, 1497) + '...' }
+
+          # 3. Set the notes on every locale's listing (no -v here, so the output stays valid JSON)
+          $submission = msstore submission get $env:STORE_ID | ConvertFrom-Json
+          foreach ($locale in $submission.Listings.PSObject.Properties) {
+            $locale.Value.BaseListing.ReleaseNotes = $notes
+          }
+          msstore submission update $env:STORE_ID ($submission | ConvertTo-Json -Depth 100 -Compress)
+
+          # 4. Commit and wait
+          msstore submission publish $env:STORE_ID
+          msstore submission poll $env:STORE_ID
