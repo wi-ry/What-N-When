@@ -1,3 +1,9 @@
+## [5.0.2](https://github.com/wi-ry/What-N-When/compare/v5.0.1...v5.0.2) (2026-10-18)
+
+### Continuous Integration
+
+* optimizations to dependabot config ([6e9cf1a](https://github.com/wi-ry/What-N-When/commit/6e9cf1ad71d5dcee9422702e992034f6d96e0a86))
+
 ## [5.0.1](https://github.com/wi-ry/What-N-When/compare/v5.0.0...v5.0.1) (2026-10-18)
 
 ### Maintenance
