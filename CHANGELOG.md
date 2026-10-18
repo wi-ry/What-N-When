@@ -1,3 +1,10 @@
+## [5.0.3](https://github.com/wi-ry/What-N-When/compare/v5.0.2...v5.0.3) (2026-10-18)
+
+### Maintenance
+
+* **deps-dev:** bump the npm-minor-and-patch group with 2 updates ([40aee05](https://github.com/wi-ry/What-N-When/commit/40aee05819bb18b15ecfcb76fa95e0758b026a9e))
+* **deps:** bump the cargo-minor-and-patch group ([2768cb3](https://github.com/wi-ry/What-N-When/commit/2768cb33585104cf1353badd413ea08b8c45c466))
+
 ## [5.0.2](https://github.com/wi-ry/What-N-When/compare/v5.0.1...v5.0.2) (2026-10-18)
 
 ### Continuous Integration
