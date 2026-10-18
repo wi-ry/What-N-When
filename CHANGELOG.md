@@ -1,3 +1,9 @@
+## [5.0.1](https://github.com/wi-ry/What-N-When/compare/v5.0.0...v5.0.1) (2026-10-18)
+
+### Maintenance
+
+* update dependabot config ([8dcd9d0](https://github.com/wi-ry/What-N-When/commit/8dcd9d07be6fd7ddc7872c5ff4e08680954b15fb))
+
 ## [5.0.0](https://github.com/wi-ry/What-N-When/compare/v4.0.2...v5.0.0) (2026-10-09)
 
 ### ⚠ BREAKING CHANGES
