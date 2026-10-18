@@ -1,25 +1,84 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
+
 updates:
+  # ---------------------------------------------------------------------------
+  # npm: tooling (Tauri CLI, semantic-release, commitlint, husky, etc.)
+  # ---------------------------------------------------------------------------
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Vancouver"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    groups:
+      # Listed first: a dependency joins the first group it matches.
+      # Keeps the Tauri JS packages moving together (any update type).
+      tauri-npm:
+        patterns:
+          - "@tauri-apps/*"
+      # Everything else: all minor + patch bumps in one PR.
+      # Major bumps are left out so they get their own PRs for review.
+      npm-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
+  # ---------------------------------------------------------------------------
+  # Cargo: Rust backend in src-tauri/
+  # ---------------------------------------------------------------------------
   - package-ecosystem: "cargo"
     directory: "/src-tauri"
     schedule:
       interval: "weekly"
-    ignore:
-      # Transitive Linux-only gtk/glib deps (this app only ships for Windows) that
-      # Dependabot cannot resolve past 0.18.5 without upstream tauri/wry updates.
-      - dependency-name: "glib"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Vancouver"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "rust"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      # tauri, tauri-build, tauri-plugin-* should stay in lockstep.
+      tauri-crates:
+        patterns:
+          - "tauri"
+          - "tauri-*"
+      # Everything else: all minor + patch bumps in one PR.
+      cargo-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
+  # ---------------------------------------------------------------------------
+  # GitHub Actions: workflows in .github/workflows
+  # ---------------------------------------------------------------------------
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "github_actions"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
