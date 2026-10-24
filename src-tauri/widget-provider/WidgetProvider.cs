@@ -208,8 +208,6 @@ public sealed class WidgetProvider : IWidgetProvider
         var firstOfMonth = new DateTime(now.Year, now.Month, 1);
         var firstDayOffset = ((int)firstOfMonth.DayOfWeek - (int)firstDayOfWeek + 7) % 7;
         var todayMarker = CreateTodayMarkerDataUri(now.Day);
-        var openCalendarLink = CreateOpenCalendarLinkDataUri();
-        model["openCalendarLink"] = openCalendarLink;
         for (var cell = 0; cell < 42; cell++)
         {
             var date = firstOfMonth.AddDays(cell - firstDayOffset);
@@ -257,27 +255,6 @@ public sealed class WidgetProvider : IWidgetProvider
             graphics.Clear(Color.Transparent);
             graphics.FillEllipse(background, 1, 1, 62, 62);
             graphics.DrawString(day.ToString(CultureInfo.CurrentCulture), font, foreground, new RectangleF(0, 0, 64, 64), centered);
-        }
-
-        using var stream = new System.IO.MemoryStream();
-        bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-        return $"data:image/png;base64,{Convert.ToBase64String(stream.ToArray())}";
-    }
-
-    private static string CreateOpenCalendarLinkDataUri()
-    {
-        using var bitmap = new Bitmap(240, 32);
-        using (var graphics = Graphics.FromImage(bitmap))
-        using (var brush = new SolidBrush(GetWindowsAccentColor()))
-        using (var font = new Font("Segoe UI", 24, FontStyle.Regular, GraphicsUnit.Pixel))
-        using (var centered = new StringFormat
-        {
-            Alignment = StringAlignment.Center,
-            LineAlignment = StringAlignment.Center
-        })
-        {
-            graphics.Clear(Color.Transparent);
-            graphics.DrawString("Open calendar", font, brush, new RectangleF(0, 0, 240, 32), centered);
         }
 
         using var stream = new System.IO.MemoryStream();
@@ -447,28 +424,17 @@ public sealed class WidgetProvider : IWidgetProvider
             });
         }
 
-        items.Add(new
-        {
-            type = "Image",
-            url = "${openCalendarLink}",
-            altText = "Open calendar",
-            width = "120px",
-            height = "16px",
-            horizontalAlignment = "Center",
-            spacing = "Small",
-            selectAction = new
-            {
-                type = "Action.Execute",
-                title = "Open calendar",
-                verb = "open-app"
-            }
-        });
-
         return JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["type"] = "AdaptiveCard",
             ["$schema"] = "http://adaptivecards.io/schemas/adaptive-card.json",
             ["version"] = "1.5",
+            ["selectAction"] = new
+            {
+                type = "Action.Execute",
+                title = "Open calendar",
+                verb = "open-app"
+            },
             ["body"] = items
         }, TemplateSerializerOptions);
     }

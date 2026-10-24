@@ -74,7 +74,7 @@ Set-Content .env.local 'WNW_MSIX_CERTIFICATE_THUMBPRINT=<certificate-thumbprint>
 
 The script reads `.env.local` by default; alternatively, pass `-CertificateThumbprint` or set the `WNW_MSIX_CERTIFICATE_THUMBPRINT` environment variable. To sign a specific package, pass `-PackagePath`. The script timestamps the signature and verifies it after signing. The certificate must also be trusted by Windows on the machine where the MSIX is installed.
 
-The Windows widget is registered only by the MSIX package. It is not available in the NSIS/MSI installers or the portable executable. All sizes share a date summary with the day and month on the left and the weekday separated on the right. Medium and large layouts add a full-width, six-week calendar panel; today's cell is marked with a round image colored from the current Windows accent color. The smaller **Open calendar** text is centered below the content and activates the packaged desktop app.
+The Windows widget is registered only by the MSIX package. It is not available in the NSIS/MSI installers or the portable executable. All sizes share a date summary with the day and month on the left and the weekday separated on the right. Medium and large layouts add a full-width, six-week calendar panel; today's cell is marked with a round image colored from the current Windows accent color. Clicking anywhere on the widget card opens the packaged desktop app.
 
 ## Development
 
