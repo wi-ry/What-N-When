@@ -1,3 +1,9 @@
+## [5.1.0](https://github.com/wi-ry/What-N-When/compare/v5.0.3...v5.1.0) (2026-10-24)
+
+### Features
+
+* add native windows 11 widget ([#41](https://github.com/wi-ry/What-N-When/issues/41)) ([9c2e87a](https://github.com/wi-ry/What-N-When/commit/9c2e87a1537baf7c0438976351490afefc9f38d6))
+
 ## [5.0.3](https://github.com/wi-ry/What-N-When/compare/v5.0.2...v5.0.3) (2026-10-18)
 
 ### Maintenance
