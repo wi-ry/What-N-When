@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Mutex, MutexGuard, PoisonError};
 use tauri::webview::{Color, NewWindowResponse, PageLoadEvent, WebviewBuilder};
 use tauri::{
@@ -41,6 +41,89 @@ const MAX_TRANSPARENCY_LEVEL: u8 = 230;
 const MIN_VISIBLE_PX: i64 = 100;
 
 static POPUP_WINDOW_ID: AtomicUsize = AtomicUsize::new(0);
+static WIDGET_ACTIVATION_FOREGROUND: AtomicBool = AtomicBool::new(false);
+
+#[cfg(windows)]
+mod widget_activation {
+    use super::{desktop, WIDGET_ACTIVATION_FOREGROUND};
+    use std::io;
+    use std::os::windows::ffi::OsStrExt;
+    use std::sync::atomic::Ordering;
+    use tauri::AppHandle;
+    use windows_sys::Win32::Foundation::{CloseHandle, WAIT_FAILED, WAIT_OBJECT_0};
+    use windows_sys::Win32::System::Threading::{CreateEventW, WaitForSingleObject, INFINITE};
+
+    pub const EVENT_NAME: &str = "Local\\WhatNWhen.DesktopActivation.v1";
+
+    pub fn listen(app: AppHandle, window: tauri::Window) -> io::Result<()> {
+        let name: Vec<u16> = std::ffi::OsStr::new(EVENT_NAME)
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+        let event = unsafe { CreateEventW(std::ptr::null(), 0, 0, name.as_ptr()) };
+        if event.is_null() {
+            return Err(io::Error::last_os_error());
+        }
+        let event_handle = event as usize;
+        if let Err(error) = std::thread::Builder::new()
+            .name("widget-activation-listener".into())
+            .spawn(move || {
+                let event = event_handle as windows_sys::Win32::Foundation::HANDLE;
+                loop {
+                    let result = unsafe { WaitForSingleObject(event, INFINITE) };
+                    if result != WAIT_OBJECT_0 {
+                        if result == WAIT_FAILED {
+                            eprintln!(
+                                "widget activation listener: wait failed: {}",
+                                io::Error::last_os_error()
+                            );
+                        } else {
+                            eprintln!(
+                                "widget activation listener: unexpected wait result {result}"
+                            );
+                        }
+                        break;
+                    }
+                    activate_main_window(&app, &window);
+                }
+                unsafe {
+                    CloseHandle(event);
+                }
+            })
+        {
+            unsafe {
+                CloseHandle(event);
+            }
+            return Err(error);
+        }
+
+        Ok(())
+    }
+
+    fn activate_main_window(app: &AppHandle, window: &tauri::Window) {
+        if let Err(error) = window.set_always_on_bottom(false) {
+            eprintln!("widget activation: could not raise main window: {error}");
+            return;
+        }
+        if let Err(error) = window.set_always_on_top(true) {
+            eprintln!("widget activation: could not bring main window to front: {error}");
+            return;
+        }
+        WIDGET_ACTIVATION_FOREGROUND.store(true, Ordering::Release);
+
+        if window.is_minimized().unwrap_or(false) {
+            if let Err(error) = window.unminimize() {
+                eprintln!("widget activation: could not unminimize main window: {error}");
+            }
+        }
+        if let Err(error) = desktop::restore_with_window(app, window) {
+            eprintln!("widget activation: could not restore main window: {error}");
+        }
+        if let Err(error) = window.set_focus() {
+            eprintln!("widget activation: could not focus main window: {error}");
+        }
+    }
+}
 
 /// External identity providers whose popups must stay in-app (OAuth flows rely on
 /// `window.opener`, `postMessage` and cookies shared with the calendar webview).
@@ -409,7 +492,10 @@ fn write_atomic(path: &Path, settings: &Settings) -> io::Result<()> {
         fs::create_dir_all(parent)?;
     }
     let tmp = path.with_extension("json.tmp");
-    fs::write(&tmp, serde_json::to_vec_pretty(settings).map_err(io::Error::other)?)?;
+    fs::write(
+        &tmp,
+        serde_json::to_vec_pretty(settings).map_err(io::Error::other)?,
+    )?;
     fs::rename(tmp, path)
 }
 
@@ -505,7 +591,9 @@ mod desktop {
     use std::sync::{Mutex, OnceLock, PoisonError};
     use std::time::Duration;
     use tauri::{AppHandle, Manager};
-    use windows_sys::Win32::Foundation::{CloseHandle, HANDLE, HWND, LPARAM, LRESULT, POINT, WPARAM};
+    use windows_sys::Win32::Foundation::{
+        CloseHandle, HANDLE, HWND, LPARAM, LRESULT, POINT, WPARAM,
+    };
     use windows_sys::Win32::Graphics::Gdi::ScreenToClient;
     use windows_sys::Win32::System::Diagnostics::Debug::{ReadProcessMemory, WriteProcessMemory};
     use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
@@ -517,12 +605,11 @@ mod desktop {
     };
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::GetDoubleClickTime;
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        CallNextHookEx, GetClassNameW, GetMessageW, GetParent, GetSystemMetrics,
-        GetWindowLongPtrW, GetWindowThreadProcessId, SendMessageTimeoutW,
-        SetLayeredWindowAttributes, SetWindowLongPtrW, SetWindowsHookExW, UnhookWindowsHookEx,
-        WindowFromPoint, GWL_EXSTYLE, HC_ACTION, LWA_ALPHA, MSG, MSLLHOOKSTRUCT,
-        SM_CXDOUBLECLK, SM_CYDOUBLECLK, SMTO_ABORTIFHUNG, WH_MOUSE_LL, WM_LBUTTONDOWN,
-        WS_EX_LAYERED,
+        CallNextHookEx, GetClassNameW, GetMessageW, GetParent, GetSystemMetrics, GetWindowLongPtrW,
+        GetWindowThreadProcessId, SendMessageTimeoutW, SetLayeredWindowAttributes,
+        SetWindowLongPtrW, SetWindowsHookExW, UnhookWindowsHookEx, WindowFromPoint, GWL_EXSTYLE,
+        HC_ACTION, LWA_ALPHA, MSG, MSLLHOOKSTRUCT, SMTO_ABORTIFHUNG, SM_CXDOUBLECLK,
+        SM_CYDOUBLECLK, WH_MOUSE_LL, WM_LBUTTONDOWN, WS_EX_LAYERED,
     };
 
     const FADE_STEPS: u16 = 13;
@@ -603,7 +690,10 @@ mod desktop {
         }
 
         fn set_target(&self, target: String) {
-            *self.last_target.lock().unwrap_or_else(PoisonError::into_inner) = target;
+            *self
+                .last_target
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner) = target;
         }
 
         fn set_toggle_result(&self, result: impl Into<String>) {
@@ -674,7 +764,10 @@ mod desktop {
     }
 
     pub fn set_toggle_action(action: DesktopToggleAction) {
-        FADE_INSTEAD_OF_HIDE.store(action == DesktopToggleAction::Transparent, Ordering::Relaxed);
+        FADE_INSTEAD_OF_HIDE.store(
+            action == DesktopToggleAction::Transparent,
+            Ordering::Relaxed,
+        );
     }
 
     pub fn debug_snapshot() -> DesktopListenerDebug {
@@ -684,6 +777,10 @@ mod desktop {
     /// Brings the widget back to fully visible, whatever state it is in.
     pub fn restore(app: &AppHandle) -> Result<(), String> {
         let window = main_window(app)?;
+        restore_with_window(app, &window)
+    }
+
+    pub fn restore_with_window(app: &AppHandle, window: &tauri::Window) -> Result<(), String> {
         let was_visible = window.is_visible().map_err(|e| e.to_string())?;
         if !was_visible {
             set_window_alpha(&window, 0);
@@ -1035,8 +1132,7 @@ mod desktop {
 
         for depth in 0..MAX_ANCESTOR_DEPTH {
             // SAFETY: `window` is non-null here and `buffer` is a valid writable buffer.
-            let length =
-                unsafe { GetClassNameW(window, buffer.as_mut_ptr(), buffer.len() as i32) };
+            let length = unsafe { GetClassNameW(window, buffer.as_mut_ptr(), buffer.len() as i32) };
             let name = &buffer[..length.max(0) as usize];
 
             saw_progman |= utf16_eq(name, "Progman");
@@ -1384,7 +1480,8 @@ async fn open_options_window(app: AppHandle) -> Result<(), String> {
             .maximizable(false);
 
     if let Some(main_window) = app.get_window(MAIN_LABEL) {
-        if let (Ok(position), Ok(scale)) = (main_window.outer_position(), main_window.scale_factor())
+        if let (Ok(position), Ok(scale)) =
+            (main_window.outer_position(), main_window.scale_factor())
         {
             builder = builder.position(
                 f64::from(position.x) / scale + 32.0,
@@ -1433,13 +1530,19 @@ fn bounds_on_screen(window: &WebviewWindow, bounds: &WindowBounds) -> bool {
         return true; // can't tell; trust the saved bounds
     };
     let (left, top) = (i64::from(bounds.x), i64::from(bounds.y));
-    let (right, bottom) = (left + i64::from(bounds.width), top + i64::from(bounds.height));
+    let (right, bottom) = (
+        left + i64::from(bounds.width),
+        top + i64::from(bounds.height),
+    );
 
     monitors.iter().any(|monitor| {
         let position = monitor.position();
         let size = monitor.size();
         let (m_left, m_top) = (i64::from(position.x), i64::from(position.y));
-        let (m_right, m_bottom) = (m_left + i64::from(size.width), m_top + i64::from(size.height));
+        let (m_right, m_bottom) = (
+            m_left + i64::from(size.width),
+            m_top + i64::from(size.height),
+        );
 
         let overlap_w = right.min(m_right) - left.max(m_left);
         let overlap_h = bottom.min(m_bottom) - top.max(m_top);
@@ -1491,7 +1594,11 @@ fn build_calendar_webview(handle: &AppHandle) -> WebviewBuilder<tauri::Wry> {
             move |url, features| {
                 let in_app = is_auth_popup(&url);
                 if cfg!(debug_assertions) {
-                    let target = if in_app { "in-app popup" } else { "default browser" };
+                    let target = if in_app {
+                        "in-app popup"
+                    } else {
+                        "default browser"
+                    };
                     eprintln!("popup request: {url} -> {target}");
                 }
                 if !in_app {
@@ -1503,35 +1610,35 @@ fn build_calendar_webview(handle: &AppHandle) -> WebviewBuilder<tauri::Wry> {
                     "notion-calendar-popup-{}",
                     POPUP_WINDOW_ID.fetch_add(1, Ordering::Relaxed)
                 );
-                let mut popup = WebviewWindowBuilder::new(
-                    &handle,
-                    &label,
-                    WebviewUrl::External(about_blank()),
-                )
-                .window_features(features)
-                .title("Notion Calendar Sign In")
-                .on_document_title_changed(|window, title| {
-                    if !log_debug_title("popup", &title) {
-                        let _ = window.set_title(&title);
-                    }
-                })
-                .on_page_load(|window, payload| {
-                    let finished = matches!(payload.event(), PageLoadEvent::Finished);
-                    if cfg!(debug_assertions) {
-                        log_page_load("popup", finished, payload.url());
-                    }
-                    if AUTO_CLOSE_POPUP_CALLBACK && finished && is_popup_callback(payload.url()) {
-                        std::thread::spawn(move || {
-                            std::thread::sleep(POPUP_CALLBACK_CLOSE_DELAY);
-                            if cfg!(debug_assertions) {
-                                eprintln!("[popup] auto-closing callback popup");
+                let mut popup =
+                    WebviewWindowBuilder::new(&handle, &label, WebviewUrl::External(about_blank()))
+                        .window_features(features)
+                        .title("Notion Calendar Sign In")
+                        .on_document_title_changed(|window, title| {
+                            if !log_debug_title("popup", &title) {
+                                let _ = window.set_title(&title);
                             }
-                            if let Err(error) = window.close() {
-                                eprintln!("could not close sign-in popup: {error}");
+                        })
+                        .on_page_load(|window, payload| {
+                            let finished = matches!(payload.event(), PageLoadEvent::Finished);
+                            if cfg!(debug_assertions) {
+                                log_page_load("popup", finished, payload.url());
+                            }
+                            if AUTO_CLOSE_POPUP_CALLBACK
+                                && finished
+                                && is_popup_callback(payload.url())
+                            {
+                                std::thread::spawn(move || {
+                                    std::thread::sleep(POPUP_CALLBACK_CLOSE_DELAY);
+                                    if cfg!(debug_assertions) {
+                                        eprintln!("[popup] auto-closing callback popup");
+                                    }
+                                    if let Err(error) = window.close() {
+                                        eprintln!("could not close sign-in popup: {error}");
+                                    }
+                                });
                             }
                         });
-                    }
-                });
                 if cfg!(debug_assertions) {
                     popup = popup.initialization_script(debug_script(DEBUG_JS_POPUP));
                 }
@@ -1624,15 +1731,31 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let (position, size) = calendar_bounds(main_window.inner_size()?, main_window.scale_factor()?);
     main_base_window.add_child(build_calendar_webview(&handle), position, size)?;
 
+    let activation_window = main_base_window.clone();
     main_window.on_window_event({
         let handle = handle.clone();
         let base_window = main_base_window.clone();
         move |event| match event {
             tauri::WindowEvent::Resized(size) => layout_calendar(&handle, &base_window, *size),
             tauri::WindowEvent::CloseRequested { .. } => save_window_bounds(&handle, &base_window),
+            tauri::WindowEvent::Focused(false)
+                if WIDGET_ACTIVATION_FOREGROUND.swap(false, Ordering::AcqRel) =>
+            {
+                if let Err(error) = main_base_window.set_always_on_top(false) {
+                    eprintln!("widget activation: could not restore normal z-order: {error}");
+                }
+                if let Err(error) = main_base_window.set_always_on_bottom(true) {
+                    eprintln!("widget activation: could not restore desktop position: {error}");
+                }
+            }
             _ => {}
         }
     });
+
+    #[cfg(windows)]
+    if let Err(error) = widget_activation::listen(handle.clone(), activation_window) {
+        eprintln!("widget activation: could not start activation listener: {error}");
+    }
 
     Ok(())
 }
