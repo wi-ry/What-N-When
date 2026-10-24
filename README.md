@@ -21,6 +21,7 @@ A desktop widget for Windows that embeds [Notion Calendar](https://calendar.noti
 - Refresh, options, and close buttons
 - Widget Options window (remember window bounds, launch at Windows startup)
 - Optional desktop double-click toggle to hide or show the widget
+- Windows 11 widget with today's date that opens the desktop app (MSIX installation)
 - Skipped from the taskbar
 - Persistent window size and position
 - Custom edge and corner resizing
@@ -31,6 +32,7 @@ A desktop widget for Windows that embeds [Notion Calendar](https://calendar.noti
 - Node.js 18+
 - Rust (stable toolchain) with the MSVC build tools
 - [WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (preinstalled on most modern Windows systems)
+- .NET 8 SDK and Windows SDK (only needed to build the MSIX lock-screen widget package)
 
 ## Install
 
@@ -55,6 +57,24 @@ npm run build
 ```
 
 Build output includes NSIS and MSI installers in `src-tauri/target/release/bundle/` and the portable executable at `src-tauri/target/release/what-n-when.exe`. GitHub releases include a versioned portable executable alongside the installers.
+
+To build the MSIX package with the lock-screen widget, run this after `npm run build` in PowerShell:
+
+```powershell
+.\.github\scripts\package-msix.ps1
+```
+
+The package is unsigned. To sign it, install a trusted code-signing certificate with its private key in the current user's `Personal` certificate store (`Cert:\CurrentUser\My`). Its subject must match the `Publisher` value in `.github/scripts/AppxManifest.template.xml`. Find its thumbprint and save it in the ignored, machine-local `.env.local` file:
+
+```powershell
+Get-ChildItem Cert:\CurrentUser\My | Select-Object Subject, Thumbprint
+Set-Content .env.local 'WNW_MSIX_CERTIFICATE_THUMBPRINT=<certificate-thumbprint>'
+.\.github\scripts\sign-msix.ps1
+```
+
+The script reads `.env.local` by default; alternatively, pass `-CertificateThumbprint` or set the `WNW_MSIX_CERTIFICATE_THUMBPRINT` environment variable. To sign a specific package, pass `-PackagePath`. The script timestamps the signature and verifies it after signing. The certificate must also be trusted by Windows on the machine where the MSIX is installed.
+
+The Windows widget is registered only by the MSIX package. It is not available in the NSIS/MSI installers or the portable executable. All sizes share a date summary with the day and month on the left and the weekday separated on the right. Medium and large layouts add a full-width, six-week calendar panel; today's cell is marked with a round image colored from the current Windows accent color. The smaller **Open calendar** text is centered below the content and activates the packaged desktop app.
 
 ## Development
 

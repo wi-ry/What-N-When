@@ -45,3 +45,6 @@ src-tauri/target/
 Thumbs.db
 src-tauri/settings.json
 src-tauri/gen/
+
+# Local MSIX signing configuration
+.env.local

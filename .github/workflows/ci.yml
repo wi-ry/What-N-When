@@ -23,6 +23,11 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
       - name: Cache Node dependencies
         id: node-modules-cache
         uses: actions/cache@v6
@@ -51,9 +56,8 @@ jobs:
         run: npm run build
 
       - name: Package MSIX
-        if: github.event_name == 'push'
         shell: pwsh
-        run: .github/scripts/package-msix.ps1
+        run: .github\scripts\package-msix.ps1
 
       - name: Upload build artifact
         if: github.event_name == 'push'
