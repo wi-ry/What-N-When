@@ -1,3 +1,9 @@
+## [5.1.1](https://github.com/wi-ry/What-N-When/compare/v5.1.0...v5.1.1) (2026-10-30)
+
+### Maintenance
+
+* **deps-dev:** bump fast-uri from 3.1.8 to 3.1.9 ([#42](https://github.com/wi-ry/What-N-When/issues/42)) ([043e1b0](https://github.com/wi-ry/What-N-When/commit/043e1b0abd49019efa0b736a0eb1c978ad8c7588))
+
 ## [5.1.0](https://github.com/wi-ry/What-N-When/compare/v5.0.3...v5.1.0) (2026-10-24)
 
 ### Features
