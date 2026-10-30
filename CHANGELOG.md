@@ -1,3 +1,9 @@
+## [5.1.2](https://github.com/wi-ry/What-N-When/compare/v5.1.1...v5.1.2) (2026-10-30)
+
+### Maintenance
+
+* **deps:** bump undici from 8.11.2 to 8.12.3 ([#43](https://github.com/wi-ry/What-N-When/issues/43)) ([e3fb1ca](https://github.com/wi-ry/What-N-When/commit/e3fb1ca2f9f69044c4e190f8a4054ac7a70d8489))
+
 ## [5.1.1](https://github.com/wi-ry/What-N-When/compare/v5.1.0...v5.1.1) (2026-10-30)
 
 ### Maintenance
