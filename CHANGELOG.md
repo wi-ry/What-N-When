@@ -1,3 +1,9 @@
+## [5.1.3](https://github.com/wi-ry/What-N-When/compare/v5.1.2...v5.1.3) (2026-10-30)
+
+### Maintenance
+
+* **deps-dev:** bump the npm-minor-and-patch group across 1 directory with 3 updates ([#44](https://github.com/wi-ry/What-N-When/issues/44)) ([c5ab91a](https://github.com/wi-ry/What-N-When/commit/c5ab91a41b04d25b9c12c2e4701ac5dc25262c06))
+
 ## [5.1.2](https://github.com/wi-ry/What-N-When/compare/v5.1.1...v5.1.2) (2026-10-30)
 
 ### Maintenance
