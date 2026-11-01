@@ -1,4 +1,3 @@
-// Map HTML edge names to Tauri ResizeDirection enum values.
 const RESIZE_DIRECTION = {
   right: 'East',
   left: 'West',
@@ -13,10 +12,16 @@ const RESIZE_DIRECTION = {
 const appWindow = window.__TAURI__.window.getCurrentWindow();
 const invoke = window.__TAURI__.core.invoke;
 
+// Runs a backend command and logs failures instead of dropping them silently.
+function call(command, args) {
+  return invoke(command, args).catch((error) => {
+    console.error(`${command} failed:`, error);
+  });
+}
+
 async function initDevBadge() {
   try {
-    const isDebug = await invoke('is_debug_build');
-    if (isDebug) {
+    if (await invoke('is_debug_build')) {
       document.body.classList.add('dev-build');
     }
   } catch (e) {
@@ -29,19 +34,18 @@ initDevBadge();
 document.querySelectorAll('.resize-handle').forEach((handle) => {
   handle.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
+    const direction = RESIZE_DIRECTION[handle.dataset.edge];
+    if (!direction) {
+      console.error('Unknown resize edge:', handle.dataset.edge);
+      return;
+    }
     e.preventDefault();
-    appWindow.startResizeDragging(RESIZE_DIRECTION[handle.dataset.edge]);
+    appWindow.startResizeDragging(direction).catch((error) => {
+      console.error('startResizeDragging failed:', error);
+    });
   });
 });
 
-document.getElementById('refresh-btn').addEventListener('click', () => {
-  invoke('refresh_calendar');
-});
-
-document.getElementById('options-btn').addEventListener('click', () => {
-  invoke('open_options_window');
-});
-
-document.getElementById('close-btn').addEventListener('click', () => {
-  invoke('close_window');
-});
+document.getElementById('refresh-btn').addEventListener('click', () => call('refresh_calendar'));
+document.getElementById('options-btn').addEventListener('click', () => call('open_options_window'));
+document.getElementById('close-btn').addEventListener('click', () => call('close_window'));

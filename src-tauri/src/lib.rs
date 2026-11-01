@@ -150,7 +150,7 @@ const GUARD_SAME_WINDOW_NAVIGATION: bool = false;
 const AUTO_CLOSE_POPUP_CALLBACK: bool = true;
 /// How long the callback page gets to deliver its message before we close it. Kept long
 /// while we diagnose the Microsoft flow; shorten once sign-in works.
-const POPUP_CALLBACK_CLOSE_DELAY: std::time::Duration = std::time::Duration::from_millis(4000);
+const POPUP_CALLBACK_CLOSE_DELAY: std::time::Duration = std::time::Duration::from_millis(1000);
 
 /// Dev-build diagnostics. Scripts injected into the popup and the calendar webview report
 /// what they see by setting `document.title` to `WNWDBG|<n>|<message>`; the title-changed

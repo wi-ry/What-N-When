@@ -1,3 +1,5 @@
+const MAX_TRANSPARENCY_LEVEL = 230; // keep in sync with MAX_TRANSPARENCY_LEVEL in lib.rs
+
 const rememberBoundsCheckbox = document.getElementById('remember-bounds');
 const openAtLoginCheckbox = document.getElementById('open-at-login');
 const desktopDoubleClickCheckbox = document.getElementById('desktop-double-click');
@@ -14,6 +16,12 @@ const listenerDebugOutput = document.getElementById('listener-debug-output');
 
 const invoke = window.__TAURI__.core.invoke;
 let options = {};
+let debugInterval;
+
+// The backend clamps to this value, so never let the slider offer more.
+if (!transparencyLevelSlider.max || Number(transparencyLevelSlider.max) > MAX_TRANSPARENCY_LEVEL) {
+  transparencyLevelSlider.max = MAX_TRANSPARENCY_LEVEL;
+}
 
 function setStatus(message) {
   status.textContent = message;
@@ -28,9 +36,22 @@ function updateDesktopToggleMode() {
 }
 
 function updateTransparencySectionVisibility() {
-  const isTransparent = document.querySelector('input[name="desktop-toggle-action"]:checked').value === 'transparent';
+  const isTransparent = selectedDesktopToggleAction() === 'transparent';
   const isDesktopDoubleClickEnabled = desktopDoubleClickCheckbox.checked;
   transparencySection.hidden = !(isTransparent && isDesktopDoubleClickEnabled);
+}
+
+// Fills the form from an OptionsView returned by the backend.
+function applyOptionsToForm(view) {
+  rememberBoundsCheckbox.checked = Boolean(view.rememberWindowBounds);
+  openAtLoginCheckbox.checked = Boolean(view.openAtLogin);
+  desktopDoubleClickCheckbox.checked = Boolean(view.toggleOnDesktopDoubleClick);
+  desktopToggleActionInputs.forEach((input) => {
+    input.checked = input.value === (view.desktopToggleAction || 'hide');
+  });
+  transparencyLevelSlider.value = view.transparencyLevel;
+  updateDesktopToggleMode();
+  updateTransparencySectionVisibility();
 }
 
 async function applyBuildMode() {
@@ -63,46 +84,53 @@ async function updateDesktopListenerDebug() {
 }
 
 async function loadOptions() {
+  // Tauri/serde uses camelCase for JSON, so the property is transparencyLevel.
   options = await invoke('get_options');
-  rememberBoundsCheckbox.checked = Boolean(options.rememberWindowBounds);
-  openAtLoginCheckbox.checked = Boolean(options.openAtLogin);
-  desktopDoubleClickCheckbox.checked = Boolean(options.toggleOnDesktopDoubleClick);
-  desktopToggleActionInputs.forEach((input) => {
-    input.checked = input.value === (options.desktopToggleAction || 'hide');
-  });
-  // Always update slider with saved value, regardless of section visibility
-  // Note: Tauri/serde uses camelCase for JSON, so property is transparencyLevel not transparency_level
-  transparencyLevelSlider.value = options.transparencyLevel;
-  updateDesktopToggleMode();
-  updateTransparencySectionVisibility();
-
-  // Add event listeners for toggle action radio buttons
-  desktopToggleActionInputs.forEach((input) => {
-    input.addEventListener('change', updateTransparencySectionVisibility);
-  });
-
-  // Add event listener for transparency slider to preview changes in real-time
-  transparencyLevelSlider.addEventListener('input', async () => {
-    const level = parseInt(transparencyLevelSlider.value);
-    try {
-      await invoke('update_transparency_level', { transparencyLevel: level });
-    } catch (error) {
-      console.error('Failed to update transparency level:', error);
-    }
-  });
+  applyOptionsToForm(options);
 }
 
+// ----- event listeners (attached once, at top level) -----------------------
+
+desktopToggleActionInputs.forEach((input) => {
+  input.addEventListener('change', updateTransparencySectionVisibility);
+});
+
+desktopDoubleClickCheckbox.addEventListener('change', () => {
+  updateDesktopToggleMode();
+  updateTransparencySectionVisibility();
+});
+
+// Live preview while dragging. Note: the backend persists this immediately,
+// which is why Cancel reverts it below.
+transparencyLevelSlider.addEventListener('input', async () => {
+  const level = parseInt(transparencyLevelSlider.value, 10);
+  try {
+    await invoke('update_transparency_level', { transparencyLevel: level });
+  } catch (error) {
+    console.error('Failed to update transparency level:', error);
+  }
+});
+
 saveButton.addEventListener('click', async () => {
-  await invoke('save_options', {
+  const patch = {
     rememberWindowBounds: rememberBoundsCheckbox.checked,
-    openAtLogin: openAtLoginCheckbox.checked,
     toggleOnDesktopDoubleClick: desktopDoubleClickCheckbox.checked,
     desktopToggleAction: selectedDesktopToggleAction(),
-    transparencyLevel: parseInt(transparencyLevelSlider.value),
-  });
+    transparencyLevel: parseInt(transparencyLevelSlider.value, 10),
+  };
+  // Only touch the OS autostart entry when the user actually changed it.
+  if (openAtLoginCheckbox.checked !== Boolean(options.openAtLogin)) {
+    patch.openAtLogin = openAtLoginCheckbox.checked;
+  }
 
-  setStatus('Saved.');
-  setTimeout(() => invoke('close_window'), 350);
+  try {
+    options = await invoke('save_options', { patch });
+    setStatus('Saved.');
+    setTimeout(() => invoke('close_window'), 350);
+  } catch (error) {
+    console.error('save_options failed:', error);
+    setStatus(`Save failed: ${error}`);
+  }
 });
 
 testToggleButton.addEventListener('click', async () => {
@@ -116,26 +144,26 @@ testToggleButton.addEventListener('click', async () => {
 });
 
 resetButton.addEventListener('click', async () => {
-  options = await invoke('reset_options');
-  rememberBoundsCheckbox.checked = Boolean(options.rememberWindowBounds);
-  openAtLoginCheckbox.checked = Boolean(options.openAtLogin);
-  desktopDoubleClickCheckbox.checked = Boolean(options.toggleOnDesktopDoubleClick);
-  desktopToggleActionInputs.forEach((input) => {
-    input.checked = input.value === options.desktopToggleAction;
-  });
-  transparencyLevelSlider.value = options.transparencyLevel;
-  updateDesktopToggleMode();
-  updateTransparencySectionVisibility();
-  setStatus('Reset to defaults.');
+  try {
+    options = await invoke('reset_options');
+    applyOptionsToForm(options);
+    setStatus('Reset to defaults.');
+  } catch (error) {
+    console.error('reset_options failed:', error);
+    setStatus(`Reset failed: ${error}`);
+  }
 });
 
-cancelButton.addEventListener('click', () => {
+cancelButton.addEventListener('click', async () => {
+  try {
+    // Undo any live-preview changes that were already persisted.
+    await invoke('update_transparency_level', {
+      transparencyLevel: options.transparencyLevel,
+    });
+  } catch (error) {
+    console.error('Failed to revert transparency level:', error);
+  }
   invoke('close_window');
-});
-
-desktopDoubleClickCheckbox.addEventListener('change', () => {
-  updateDesktopToggleMode();
-  updateTransparencySectionVisibility();
 });
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -146,8 +174,10 @@ window.addEventListener('DOMContentLoaded', () => {
         debugInterval = setInterval(updateDesktopListenerDebug, 750);
       }
     })
-    .catch(() => setStatus('Failed to load options.'));
+    .catch((error) => {
+      console.error('Failed to load options:', error);
+      setStatus('Failed to load options.');
+    });
 });
 
-let debugInterval;
 window.addEventListener('beforeunload', () => clearInterval(debugInterval));
