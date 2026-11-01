@@ -1,3 +1,9 @@
+## [5.1.4](https://github.com/wi-ry/What-N-When/compare/v5.1.3...v5.1.4) (2026-11-01)
+
+### Bug Fixes
+
+* **options:** save and close options window correctly ([aa726c6](https://github.com/wi-ry/What-N-When/commit/aa726c66c49fce8ce4c848b9305fda6be2081db2))
+
 ## [5.1.3](https://github.com/wi-ry/What-N-When/compare/v5.1.2...v5.1.3) (2026-10-30)
 
 ### Maintenance
