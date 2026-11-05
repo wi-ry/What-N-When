@@ -1,3 +1,9 @@
+## [5.1.6](https://github.com/wi-ry/What-N-When/compare/v5.1.5...v5.1.6) (2026-11-05)
+
+### Maintenance
+
+* add skills to project ([5afb586](https://github.com/wi-ry/What-N-When/commit/5afb5866ad8817fa096d827b6a4f7eae069cd546))
+
 ## [5.1.5](https://github.com/wi-ry/What-N-When/compare/v5.1.4...v5.1.5) (2026-11-02)
 
 ### Maintenance
