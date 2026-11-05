@@ -1,3 +1,9 @@
+## [5.1.7](https://github.com/wi-ry/What-N-When/compare/v5.1.6...v5.1.7) (2026-11-05)
+
+### Bug Fixes
+
+* report settings failures and align release config ([23c0209](https://github.com/wi-ry/What-N-When/commit/23c0209aa0085f29e2fc7ff1ce663e7e5e23e07b))
+
 ## [5.1.6](https://github.com/wi-ry/What-N-When/compare/v5.1.5...v5.1.6) (2026-11-05)
 
 ### Maintenance
