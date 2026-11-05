@@ -1,3 +1,9 @@
+## [5.1.8](https://github.com/wi-ry/What-N-When/compare/v5.1.7...v5.1.8) (2026-11-05)
+
+### Bug Fixes
+
+* **deps:** update bundled undici ([760bfc1](https://github.com/wi-ry/What-N-When/commit/760bfc16c88292377916a735b52483dff55b6358))
+
 ## [5.1.7](https://github.com/wi-ry/What-N-When/compare/v5.1.6...v5.1.7) (2026-11-05)
 
 ### Bug Fixes
