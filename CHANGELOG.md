@@ -1,3 +1,15 @@
+## [5.1.5](https://github.com/wi-ry/What-N-When/compare/v5.1.4...v5.1.5) (2026-11-02)
+
+### Maintenance
+
+* **deps:** bump the github-actions group with 2 updates ([#45](https://github.com/wi-ry/What-N-When/issues/45)) ([17f5dea](https://github.com/wi-ry/What-N-When/commit/17f5dea6ab7c1718131201f2bc41d30e76ad655b))
+
+## [5.1.4](https://github.com/wi-ry/What-N-When/compare/v5.1.3...v5.1.4) (2026-11-01)
+
+### Bug Fixes
+
+* **options:** save and close options window correctly ([aa726c6](https://github.com/wi-ry/What-N-When/commit/aa726c66c49fce8ce4c848b9305fda6be2081db2))
+
 ## [5.1.3](https://github.com/wi-ry/What-N-When/compare/v5.1.2...v5.1.3) (2026-10-30)
 
 ### Maintenance
