@@ -10,11 +10,11 @@ $stagingDirectory = Join-Path $releaseDirectory 'msix-staging'
 $providerProject = Join-Path $repositoryRoot 'src-tauri\widget-provider\WhatNWhenWidgetProvider.csproj'
 $providerPublishDirectory = Join-Path $releaseDirectory 'widget-provider-publish'
 $outputDirectory = Join-Path $releaseDirectory 'bundle\msix'
-$configPath = Join-Path $repositoryRoot 'src-tauri\tauri.conf.json'
+$packageJsonPath = Join-Path $repositoryRoot 'package.json'
 $iconPath = Join-Path $repositoryRoot 'web\assets\icon.ico'
 
 if (-not $Version) {
-    $Version = (Get-Content $configPath -Raw | ConvertFrom-Json).version
+    $Version = (Get-Content $packageJsonPath -Raw | ConvertFrom-Json).version
 }
 
 $versionParts = $Version.Split('-')[0].Split('.')

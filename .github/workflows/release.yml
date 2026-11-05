@@ -68,13 +68,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Sync Tauri app version
-        shell: pwsh
-        run: |
-          $config = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
-          $config.version = "${{ needs.release.outputs.version }}"
-          $config | ConvertTo-Json -Depth 32 | Set-Content src-tauri/tauri.conf.json
-
       - name: Build Tauri app
         run: npm run build
 
@@ -102,12 +95,18 @@ jobs:
         uses: microsoft/setup-msstore-cli@v1
 
       - name: Configure MSStore CLI
+        shell: pwsh
+        env:
+          TENANT_ID: ${{ secrets.TENANT_ID }}
+          SELLER_ID: ${{ secrets.SELLER_ID }}
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.SECRET_VALUE }}
         run: |
           msstore reconfigure `
-            --tenantId ${{ secrets.TENANT_ID }} `
-            --sellerId ${{ secrets.SELLER_ID }} `
-            --clientId ${{ secrets.CLIENT_ID }} `
-            --clientSecret ${{ secrets.SECRET_VALUE }}
+            --tenantId $env:TENANT_ID `
+            --sellerId $env:SELLER_ID `
+            --clientId $env:CLIENT_ID `
+            --clientSecret $env:CLIENT_SECRET
 
       - name: Publish to Store
         shell: pwsh

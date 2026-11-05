@@ -108,6 +108,7 @@ transparencyLevelSlider.addEventListener('input', async () => {
     await invoke('update_transparency_level', { transparencyLevel: level });
   } catch (error) {
     console.error('Failed to update transparency level:', error);
+    setStatus(`Preview failed: ${error}`);
   }
 });
 
@@ -162,6 +163,8 @@ cancelButton.addEventListener('click', async () => {
     });
   } catch (error) {
     console.error('Failed to revert transparency level:', error);
+    setStatus(`Could not revert preview: ${error}`);
+    return;
   }
   invoke('close_window');
 });

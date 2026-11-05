@@ -476,14 +476,14 @@ impl SettingsStore {
         self.lock().options.clone()
     }
 
-    /// Mutates the settings under the lock, then persists them.
-    fn update<R>(&self, apply: impl FnOnce(&mut Settings) -> R) -> R {
+    /// Persists an updated copy before replacing the in-memory settings.
+    fn update<R>(&self, apply: impl FnOnce(&mut Settings) -> R) -> io::Result<R> {
         let mut settings = self.lock();
-        let result = apply(&mut settings);
-        if let Err(error) = write_atomic(&self.path, &settings) {
-            eprintln!("settings: failed to save {}: {error}", self.path.display());
-        }
-        result
+        let mut updated = settings.clone();
+        let result = apply(&mut updated);
+        write_atomic(&self.path, &updated)?;
+        *settings = updated;
+        Ok(result)
     }
 }
 
@@ -535,16 +535,18 @@ fn remove_legacy_electron_autostart() {
 #[cfg(not(windows))]
 fn remove_legacy_electron_autostart() {}
 
-fn set_autostart(app: &AppHandle, enabled: bool) {
+fn set_autostart(app: &AppHandle, enabled: bool) -> Result<(), String> {
     let autolaunch = app.autolaunch();
-    let result = if enabled {
+    if let Err(error) = if enabled {
         autolaunch.enable()
     } else {
         autolaunch.disable()
-    };
-    if let Err(error) = result {
-        eprintln!("autostart: failed to set enabled={enabled}: {error}");
+    } {
+        let message = format!("Could not set launch-at-sign-in to {enabled}: {error}");
+        eprintln!("autostart: {message}");
+        return Err(message);
     }
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -1346,16 +1348,23 @@ fn restore_widget(app: &AppHandle) {
 // Commands
 // ---------------------------------------------------------------------------
 
-fn options_view(app: &AppHandle, options: Options) -> OptionsView {
+fn options_view(app: &AppHandle, options: Options) -> Result<OptionsView, String> {
+    let open_at_login = app
+        .autolaunch()
+        .is_enabled()
+        .map_err(|error| format!("Could not read launch-at-sign-in status: {error}"))?;
+    Ok(options_view_with_autostart(options, open_at_login))
+}
+
+fn options_view_with_autostart(options: Options, open_at_login: bool) -> OptionsView {
     OptionsView {
         options,
-        // The OS autostart entry is authoritative (the user can change it in Task Manager).
-        open_at_login: app.autolaunch().is_enabled().unwrap_or(false),
+        open_at_login,
     }
 }
 
 #[tauri::command]
-fn get_options(app: AppHandle, store: State<'_, SettingsStore>) -> OptionsView {
+fn get_options(app: AppHandle, store: State<'_, SettingsStore>) -> Result<OptionsView, String> {
     options_view(&app, store.options())
 }
 
@@ -1379,12 +1388,27 @@ fn save_options(
     app: AppHandle,
     store: State<'_, SettingsStore>,
     patch: OptionsPatch,
-) -> OptionsView {
-    if let Some(enabled) = patch.open_at_login {
-        set_autostart(&app, enabled);
-    }
+) -> Result<OptionsView, String> {
+    let previous_autostart = patch
+        .open_at_login
+        .map(|_| {
+            app.autolaunch()
+                .is_enabled()
+                .map_err(|error| format!("Could not read launch-at-sign-in status: {error}"))
+        })
+        .transpose()?;
+    let open_at_login = match patch.open_at_login {
+        Some(enabled) => {
+            set_autostart(&app, enabled)?;
+            enabled
+        }
+        None => app
+            .autolaunch()
+            .is_enabled()
+            .map_err(|error| format!("Could not read launch-at-sign-in status: {error}"))?,
+    };
 
-    let options = store.update(|settings| {
+    let options = match store.update(|settings| {
         if let Some(v) = patch.remember_window_bounds {
             settings.options.remember_window_bounds = v;
             if !v {
@@ -1401,7 +1425,20 @@ fn save_options(
             settings.options.transparency_level = v.min(MAX_TRANSPARENCY_LEVEL);
         }
         settings.options.clone()
-    });
+    }) {
+        Ok(options) => options,
+        Err(error) => {
+            let message = format!("Could not save settings: {error}");
+            if let Some(previous) = previous_autostart {
+                if let Err(rollback_error) = set_autostart(&app, previous) {
+                    return Err(format!(
+                        "{message}; could not restore the previous launch-at-sign-in setting: {rollback_error}"
+                    ));
+                }
+            }
+            return Err(message);
+        }
+    };
 
     // Side effects run after the settings lock is released.
     if let Some(enabled) = patch.toggle_on_desktop_double_click {
@@ -1420,7 +1457,7 @@ fn save_options(
         desktop::apply_transparency_level(&app);
     }
 
-    options_view(&app, options)
+    Ok(options_view_with_autostart(options, open_at_login))
 }
 
 #[tauri::command]
@@ -1428,24 +1465,42 @@ fn update_transparency_level(
     app: AppHandle,
     store: State<'_, SettingsStore>,
     transparency_level: u8,
-) {
+) -> Result<(), String> {
     let level = transparency_level.min(MAX_TRANSPARENCY_LEVEL);
-    store.update(|settings| settings.options.transparency_level = level);
+    store
+        .update(|settings| settings.options.transparency_level = level)
+        .map_err(|error| format!("Could not save transparency setting: {error}"))?;
     desktop::apply_transparency_level(&app);
+    Ok(())
 }
 
 #[tauri::command]
-fn reset_options(app: AppHandle, store: State<'_, SettingsStore>) -> OptionsView {
+fn reset_options(app: AppHandle, store: State<'_, SettingsStore>) -> Result<OptionsView, String> {
+    let previous_autostart = app
+        .autolaunch()
+        .is_enabled()
+        .map_err(|error| format!("Could not read launch-at-sign-in status: {error}"))?;
+    set_autostart(&app, false)?;
+    let options = match store.update(|settings| {
+        settings.options = Options::default();
+        settings.options.clone()
+    }) {
+        Ok(options) => options,
+        Err(error) => {
+            let message = format!("Could not reset settings: {error}");
+            if let Err(rollback_error) = set_autostart(&app, previous_autostart) {
+                return Err(format!(
+                    "{message}; could not restore the previous launch-at-sign-in setting: {rollback_error}"
+                ));
+            }
+            return Err(message);
+        }
+    };
+
     desktop::set_listener_enabled(false);
     desktop::set_toggle_action(DesktopToggleAction::default());
     restore_widget(&app);
-    set_autostart(&app, false);
-
-    let options = store.update(|settings| {
-        settings.options = Options::default();
-        settings.options.clone()
-    });
-    options_view(&app, options)
+    Ok(options_view_with_autostart(options, false))
 }
 
 #[tauri::command]
@@ -1573,7 +1628,7 @@ fn save_window_bounds(app: &AppHandle, window: &tauri::Window) {
     let (Ok(position), Ok(size)) = (window.outer_position(), window.inner_size()) else {
         return;
     };
-    app.state::<SettingsStore>().update(|settings| {
+    if let Err(error) = app.state::<SettingsStore>().update(|settings| {
         if settings.options.remember_window_bounds {
             settings.window_bounds = Some(WindowBounds {
                 x: position.x,
@@ -1582,7 +1637,9 @@ fn save_window_bounds(app: &AppHandle, window: &tauri::Window) {
                 height: size.height,
             });
         }
-    });
+    }) {
+        eprintln!("settings: failed to save window bounds: {error}");
+    }
 }
 
 fn build_calendar_webview(handle: &AppHandle) -> WebviewBuilder<tauri::Wry> {
