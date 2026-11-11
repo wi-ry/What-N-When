@@ -1,4 +1,12 @@
 //! What-N-When: a Notion Calendar desktop widget (Tauri 2).
+//!
+//! Module layout:
+//! - navigation: URL routing, popup handling, and webview diagnostics
+//! - settings: persisted options and window bounds
+//! - autostart: platform-specific launch-at-sign-in integration
+//! - commands: Tauri command handlers
+//! - windows: app setup, webview lifecycle, and window layout
+//! - desktop: Windows desktop toggle, effects, mouse hook, and hit-testing
 
 mod autostart;
 mod commands;
