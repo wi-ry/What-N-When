@@ -1,5 +1,5 @@
 use super::*;
-use super::hit_testing::{classify_window, click_hits_icon, Surface};
+use super::hit_testing::{classify_window, click_hits_icon, Classified, Surface};
 
 // ----- mouse hook ------------------------------------------------------
 
