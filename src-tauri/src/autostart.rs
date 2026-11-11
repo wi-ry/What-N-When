@@ -30,7 +30,7 @@ pub(super) fn remove_legacy_electron_autostart(current_name: &str) {
 }
 
 #[cfg(not(windows))]
-pub(super) fn remove_legacy_electron_autostart(_current_name: &str) {}
+pub(super) pub(super) fn remove_legacy_electron_autostart(_current_name: &str) {}
 
 #[cfg(windows)]
 mod platform {
@@ -161,7 +161,7 @@ mod platform {
 }
 
 #[cfg(not(windows))]
-mod autostart {
+mod platform {
     use tauri::AppHandle;
     use tauri_plugin_autostart::ManagerExt;
 
