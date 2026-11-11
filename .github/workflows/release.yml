@@ -64,6 +64,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          shared-key: tauri-windows
 
       - name: Install dependencies
         run: npm ci

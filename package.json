@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tauri dev",
     "build": "tauri build",
+    "build:debug": "tauri build --debug",
     "check": "node --check web/renderer.js && node --check web/optionsRenderer.js",
     "lint:commits": "commitlint --from HEAD~20 --to HEAD --verbose",
     "release": "semantic-release",
