@@ -16,16 +16,16 @@ const AUTH_HOSTS: &[&str] = &[
 /// are sent to the default browser instead of loading inside the widget. Off by default:
 /// it can interfere with sign-in redirects, and Notion Calendar opens event links via
 /// `window.open`, which `on_new_window` already handles.
-const GUARD_SAME_WINDOW_NAVIGATION: bool = false;
+pub(super) const GUARD_SAME_WINDOW_NAVIGATION: bool = false;
 
 /// Sign-in popups end on a Notion `...popupcallback` page (e.g. `/googlepopupcallback`,
 /// `/microsoftpopupcallback`) that is supposed to post the result to the main window and
 /// call `window.close()`. Tauri doesn't honour that call, so we close the popup ourselves.
 /// Set `AUTO_CLOSE_POPUP_CALLBACK` to false to leave the popup open while debugging.
-const AUTO_CLOSE_POPUP_CALLBACK: bool = true;
+pub(super) const AUTO_CLOSE_POPUP_CALLBACK: bool = true;
 /// How long the callback page gets to deliver its message before we close it. Kept long
 /// while we diagnose the Microsoft flow; shorten once sign-in works.
-const POPUP_CALLBACK_CLOSE_DELAY: std::time::Duration = std::time::Duration::from_millis(1000);
+pub(super) const POPUP_CALLBACK_CLOSE_DELAY: std::time::Duration = std::time::Duration::from_millis(1000);
 
 /// Dev-build diagnostics. Scripts injected into the popup and the calendar webview report
 /// what they see by setting `document.title` to `WNWDBG|<n>|<message>`; the title-changed
@@ -48,7 +48,7 @@ function openerState() {
 "#;
 
 /// Injected into every page loaded inside a sign-in popup.
-const DEBUG_JS_POPUP: &str = r#"
+pub(super) const DEBUG_JS_POPUP: &str = r#"
 (function () {
   __COMMON__
   var here = location.host + location.pathname;
@@ -70,7 +70,7 @@ const DEBUG_JS_POPUP: &str = r#"
 "#;
 
 /// Injected into the calendar webview (main window).
-const DEBUG_JS_MAIN: &str = r#"
+pub(super) const DEBUG_JS_MAIN: &str = r#"
 (function () {
   __COMMON__
   window.addEventListener('message', function (e) {
