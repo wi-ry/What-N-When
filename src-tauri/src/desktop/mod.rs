@@ -20,11 +20,11 @@ pub(super) struct DesktopListenerDebug {
 #[cfg(windows)]
 mod windows_impl {
     use super::*;
-    #[path = "effects.rs"]
+    #[path = "../effects.rs"]
     mod effects;
-    #[path = "hit_testing.rs"]
+    #[path = "../hit_testing.rs"]
     mod hit_testing;
-    #[path = "mouse_hook.rs"]
+    #[path = "../mouse_hook.rs"]
     mod mouse_hook;
     use effects::*;
     use mouse_hook::ClickEvent;
