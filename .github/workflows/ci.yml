@@ -48,6 +48,15 @@ jobs:
       - name: Syntax checks
         run: npm run check
 
+      - name: Frontend unit tests
+        run: npm test
+
+      - name: Rust unit tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Windows widget provider unit tests
+        run: dotnet test src-tauri/widget-provider.Tests/WhatNWhenWidgetProvider.Tests.csproj --configuration Release
+
       - name: Build Tauri app for pull request validation
         if: github.event_name == 'pull_request'
         run: npm run build -- --no-bundle

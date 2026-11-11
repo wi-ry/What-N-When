@@ -39,9 +39,10 @@ function updateDesktopToggleMode() {
 }
 
 function updateTransparencySectionVisibility() {
-  const isTransparent = selectedDesktopToggleAction() === 'transparent';
-  const isDesktopDoubleClickEnabled = desktopDoubleClickCheckbox.checked;
-  transparencySection.hidden = !(isTransparent && isDesktopDoubleClickEnabled);
+  transparencySection.hidden = !window.WhatNWhenOptions.shouldShowTransparencySection(
+    selectedDesktopToggleAction(),
+    desktopDoubleClickCheckbox.checked,
+  );
 }
 
 // Fills the form from an OptionsView returned by the backend.
@@ -122,16 +123,13 @@ transparencyLevelSlider.addEventListener('input', async () => {
 });
 
 saveButton.addEventListener('click', async () => {
-  const patch = {
+  const patch = window.WhatNWhenOptions.buildOptionsPatch({
     rememberWindowBounds: rememberBoundsCheckbox.checked,
     toggleOnDesktopDoubleClick: desktopDoubleClickCheckbox.checked,
     desktopToggleAction: selectedDesktopToggleAction(),
     transparencyLevel: parseInt(transparencyLevelSlider.value, 10),
-  };
-  // Only touch the OS autostart entry when the user actually changed it.
-  if (openAtLoginCheckbox.checked !== Boolean(options.openAtLogin)) {
-    patch.openAtLogin = openAtLoginCheckbox.checked;
-  }
+    openAtLogin: openAtLoginCheckbox.checked,
+  }, options);
 
   try {
     options = await invoke('save_options', { patch });
