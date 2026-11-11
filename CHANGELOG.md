@@ -1,3 +1,9 @@
+## [5.1.9](https://github.com/wi-ry/What-N-When/compare/v5.1.8...v5.1.9) (2026-11-11)
+
+### Bug Fixes
+
+* resolve issue with open at startup ([26a4117](https://github.com/wi-ry/What-N-When/commit/26a4117fed84b33b1994b9b38f220b53e8762b2a))
+
 ## [5.1.8](https://github.com/wi-ry/What-N-When/compare/v5.1.7...v5.1.8) (2026-11-05)
 
 ### Bug Fixes
