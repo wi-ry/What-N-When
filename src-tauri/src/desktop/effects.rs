@@ -3,26 +3,26 @@ use super::*;
 // ----- window effects --------------------------------------------------
 
 /// UI level (0 = opaque .. max = most transparent) -> Win32 alpha (255 = opaque).
-fn alpha_from_level(level: u8) -> u8 {
+pub(super) fn alpha_from_level(level: u8) -> u8 {
     u8::MAX - level.min(MAX_TRANSPARENCY_LEVEL)
 }
 
-fn configured_level(app: &AppHandle) -> u8 {
+pub(super) fn configured_level(app: &AppHandle) -> u8 {
     app.state::<SettingsStore>().options().transparency_level
 }
 
-fn main_window(app: &AppHandle) -> Result<tauri::Window, String> {
+pub(super) fn main_window(app: &AppHandle) -> Result<tauri::Window, String> {
     app.get_window(MAIN_LABEL)
         .ok_or_else(|| "Main window was not found".to_owned())
 }
 
-fn apply_alpha(app: &AppHandle, alpha: u8) {
+pub(super) fn apply_alpha(app: &AppHandle, alpha: u8) {
     if let Some(window) = app.get_window(MAIN_LABEL) {
         set_window_alpha(&window, alpha);
     }
 }
 
-fn set_window_alpha(window: &tauri::Window, alpha: u8) {
+pub(super) fn set_window_alpha(window: &tauri::Window, alpha: u8) {
     let Ok(hwnd) = window.hwnd() else {
         return;
     };
@@ -41,7 +41,7 @@ fn set_window_alpha(window: &tauri::Window, alpha: u8) {
 }
 
 #[derive(Clone, Copy)]
-enum FadeEnd {
+pub(super) enum FadeEnd {
     /// Leave the window visible at the target alpha.
     Keep,
     /// Hide the window once the fade completes.
@@ -50,7 +50,7 @@ enum FadeEnd {
 
 /// Animates from the current alpha to `target` on a helper thread. Starting a new
 /// fade cancels any fade already in progress.
-fn fade_to(app: &AppHandle, target: u8, end: FadeEnd) {
+pub(super) fn fade_to(app: &AppHandle, target: u8, end: FadeEnd) {
     let generation = FADE_GENERATION.fetch_add(1, Ordering::Relaxed) + 1;
     let from = CURRENT_ALPHA.load(Ordering::Relaxed);
     let app = app.clone();

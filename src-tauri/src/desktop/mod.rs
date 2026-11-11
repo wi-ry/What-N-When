@@ -27,21 +27,15 @@ mod windows_impl {
     #[path = "mouse_hook.rs"]
     mod mouse_hook;
     use effects::*;
+    use mouse_hook::ClickEvent;
 
-//! Everything that touches Win32 lives here.
-    //!
-    //! Data flow: the `WH_MOUSE_LL` callback does almost nothing (it forwards the click
-    //! over a channel), because a slow low-level hook stalls mouse input system-wide.
-    //! A worker thread classifies the click, hit-tests desktop icons inside explorer.exe,
-    //! detects double-clicks, and asks the UI thread to toggle the widget.
-    //!
-    //! `restore`, `toggle` and `test_toggle` must be called on the main thread
-    //! (sync Tauri commands already run there).
+    // Everything that touches Win32 lives here.
+    //
+    // Data flow: the WH_MOUSE_LL callback forwards clicks over a channel so a slow
+    // low-level hook does not stall mouse input system-wide. A worker classifies clicks,
+    // hit-tests desktop icons, detects double-clicks, and asks the UI thread to toggle.
 
-    use super::{
-        DesktopToggleAction, SettingsStore, MAIN_LABEL,
-        MAX_TRANSPARENCY_LEVEL,
-    };
+
     use std::ffi::c_void;
     use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
     use std::sync::mpsc::{self, Receiver, Sender};

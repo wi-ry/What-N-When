@@ -3,17 +3,17 @@ use super::*;
 // ----- click classification --------------------------------------------
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Surface {
+pub(super) enum Surface {
     Desktop,
     Other,
 }
 
-struct Classified {
-    surface: Surface,
+pub(super) struct Classified {
+    pub(super) surface: Surface,
     /// The window directly under the pointer is a SysListView32 (icon list).
-    hovered_is_list_view: bool,
+    pub(super) hovered_is_list_view: bool,
     /// Class-name chain for the debug panel; only built when requested.
-    chain: String,
+    pub(super) chain: String,
 }
 
 fn utf16_eq(units: &[u16], text: &str) -> bool {
@@ -29,7 +29,7 @@ fn utf16_eq(units: &[u16], text: &str) -> bool {
 ///
 /// # Safety
 /// `start` must be null or a window handle.
-unsafe fn classify_window(start: HWND, want_chain: bool) -> Classified {
+pub(super) unsafe fn classify_window(start: HWND, want_chain: bool) -> Classified {
     if start.is_null() {
         return Classified {
             surface: Surface::Other,
@@ -155,7 +155,7 @@ impl Drop for RemoteAlloc {
 ///
 /// # Safety
 /// `list_view` must be a SysListView32 window handle.
-unsafe fn click_hits_icon(list_view: HWND, screen_point: POINT) -> bool {
+pub(super) unsafe fn click_hits_icon(list_view: HWND, screen_point: POINT) -> bool {
     let mut client_point = screen_point;
     // SAFETY: valid window handle and a valid out-pointer.
     if unsafe { ScreenToClient(list_view, &mut client_point) } == 0 {
