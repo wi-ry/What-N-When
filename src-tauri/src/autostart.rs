@@ -30,7 +30,7 @@ pub(super) fn remove_legacy_electron_autostart(current_name: &str) {
 }
 
 #[cfg(not(windows))]
-pub(super) pub(super) fn remove_legacy_electron_autostart(_current_name: &str) {}
+pub(super) fn remove_legacy_electron_autostart(_current_name: &str) {}
 
 #[cfg(windows)]
 mod platform {
@@ -178,6 +178,10 @@ mod platform {
     }
 
     pub fn remove_stale_dev_entry(_app: &AppHandle) {}
+}
+
+pub(super) fn remove_stale_dev_entry(app: &AppHandle) {
+    platform::remove_stale_dev_entry(app);
 }
 
 pub(super) fn autostart_enabled(app: &AppHandle) -> Result<bool, String> {
