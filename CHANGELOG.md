@@ -1,3 +1,9 @@
+## [5.1.10](https://github.com/wi-ry/What-N-When/compare/v5.1.9...v5.1.10) (2026-11-11)
+
+### Continuous Integration
+
+* improve ci performance ([fb91ebf](https://github.com/wi-ry/What-N-When/commit/fb91ebf570f26b4d49dd2f89ff4a4d3d833ba76c))
+
 ## [5.1.9](https://github.com/wi-ry/What-N-When/compare/v5.1.8...v5.1.9) (2026-11-11)
 
 ### Bug Fixes
