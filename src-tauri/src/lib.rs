@@ -19,7 +19,6 @@ use tauri::{
     AppHandle, LogicalPosition, LogicalSize, Manager, PhysicalPosition, PhysicalSize, State, Url,
     WebviewUrl, WebviewWindow, WebviewWindowBuilder,
 };
-use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_opener::OpenerExt;
 
 // ---------------------------------------------------------------------------
@@ -414,6 +413,19 @@ struct OptionsView {
     #[serde(flatten)]
     options: Options,
     open_at_login: bool,
+    open_at_login_available: bool,
+}
+
+fn options_view(app: &AppHandle, options: Options) -> Result<OptionsView, String> {
+    Ok(options_view_with_autostart(options, autostart_enabled(app)?))
+}
+
+fn options_view_with_autostart(options: Options, open_at_login: bool) -> OptionsView {
+    OptionsView {
+        options,
+        open_at_login,
+        open_at_login_available: AUTOSTART_AVAILABLE,
+    }
 }
 
 /// Partial update sent by the options window; absent fields are left unchanged.
@@ -514,39 +526,199 @@ fn settings_path(app: &AppHandle) -> tauri::Result<PathBuf> {
 // Autostart
 // ---------------------------------------------------------------------------
 
+/// Dev builds never register themselves to run at sign-in (the entry would point at
+/// `target\debug`), so the option is greyed out in the UI and refused here.
+const AUTOSTART_AVAILABLE: bool = !cfg!(debug_assertions);
+
 /// Removes the Run-key entry left behind by the old Electron version of the app.
 #[cfg(windows)]
-fn remove_legacy_electron_autostart() {
+fn remove_legacy_electron_autostart(current_name: &str) {
     use winreg::enums::{HKEY_CURRENT_USER, KEY_SET_VALUE};
     use winreg::RegKey;
 
     const LEGACY_ELECTRON_AUTOSTART_NAME: &str = "ca.willryan.notioncalendarwidget";
 
+    // Never delete the entry this app writes for itself.
+    if current_name == LEGACY_ELECTRON_AUTOSTART_NAME {
+        return;
+    }
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
     if let Ok(run_key) = hkcu.open_subkey_with_flags(
         "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
         KEY_SET_VALUE,
     ) {
-        // Fails if the value doesn't exist, which is the normal case.
         let _ = run_key.delete_value(LEGACY_ELECTRON_AUTOSTART_NAME);
     }
 }
 
 #[cfg(not(windows))]
-fn remove_legacy_electron_autostart() {}
+fn remove_legacy_electron_autostart(_current_name: &str) {}
+
+#[cfg(windows)]
+mod autostart {
+    //! Writes the per-user Run key directly instead of going through the plugin
+    //! (which registers a canonicalized `\\?\` path on Windows).
+
+    use std::io;
+    use tauri::AppHandle;
+    use winreg::enums::{HKEY_CURRENT_USER, KEY_READ, KEY_SET_VALUE};
+    use winreg::RegKey;
+
+    const RUN_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
+    /// Task Manager's Enable/Disable toggle lives here, separately from the Run key.
+    const APPROVED_KEY: &str =
+        r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
+
+    fn value_name(app: &AppHandle) -> &str {
+        &app.package_info().name
+    }
+
+    fn ignore_not_found(result: io::Result<()>) -> io::Result<()> {
+        match result {
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+            other => other,
+        }
+    }
+
+    fn read_command(name: &str) -> io::Result<Option<String>> {
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let run = match hkcu.open_subkey_with_flags(RUN_KEY, KEY_READ) {
+            Ok(key) => key,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => return Err(error),
+        };
+        match run.get_value::<String, _>(name) {
+            Ok(command) => Ok(Some(command)),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+
+    fn remove_entry(name: &str) -> io::Result<()> {
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        if let Ok(run) = hkcu.open_subkey_with_flags(RUN_KEY, KEY_SET_VALUE) {
+            ignore_not_found(run.delete_value(name))?;
+        }
+        if let Ok(approved) = hkcu.open_subkey_with_flags(APPROVED_KEY, KEY_SET_VALUE) {
+            ignore_not_found(approved.delete_value(name))?;
+        }
+        Ok(())
+    }
+
+    fn is_enabled_io(name: &str) -> io::Result<bool> {
+        if read_command(name)?.is_none() {
+            return Ok(false);
+        }
+        // An odd first byte means the user disabled it in Task Manager > Startup.
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let disabled = hkcu
+            .open_subkey_with_flags(APPROVED_KEY, KEY_READ)
+            .ok()
+            .and_then(|key| key.get_raw_value(name).ok())
+            .and_then(|value| value.bytes.first().copied())
+            .is_some_and(|byte| byte & 1 == 1);
+        Ok(!disabled)
+    }
+
+    fn enable_io(name: &str) -> io::Result<()> {
+        let exe = std::env::current_exe()?;
+        let exe = exe.to_string_lossy();
+        let exe = exe.strip_prefix(r"\\?\").unwrap_or(&exe);
+        let command = format!("\"{exe}\"");
+
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let (run, _) = hkcu.create_subkey(RUN_KEY)?;
+        run.set_value(name, &command)?;
+
+        // Clear a "disabled in Task Manager" marker from an earlier session.
+        if let Ok(approved) = hkcu.open_subkey_with_flags(APPROVED_KEY, KEY_SET_VALUE) {
+            ignore_not_found(approved.delete_value(name))?;
+        }
+        Ok(())
+    }
+
+    pub fn is_enabled(app: &AppHandle) -> Result<bool, String> {
+        is_enabled_io(value_name(app))
+            .map_err(|error| format!("Could not read launch-at-sign-in status: {error}"))
+    }
+
+    pub fn set(app: &AppHandle, enabled: bool) -> Result<(), String> {
+        let name = value_name(app);
+        let result = if enabled { enable_io(name) } else { remove_entry(name) };
+        result.map_err(|error| {
+            format!("Could not set launch-at-sign-in to {enabled}: {error}")
+        })
+    }
+
+    fn normalize(text: &str) -> String {
+        text.replace('/', "\\").replace(r"\\?\", "").to_lowercase()
+    }
+
+    fn is_dev_command(command: &str) -> bool {
+        let command = normalize(command);
+        if command.contains(r"\target\debug\") {
+            return true;
+        }
+        // Covers a custom CARGO_TARGET_DIR when this *is* the dev build.
+        cfg!(debug_assertions)
+            && std::env::current_exe()
+                .is_ok_and(|exe| command.contains(&normalize(&exe.to_string_lossy())))
+    }
+
+    /// Removes a Run entry that points at a dev build (one registered before dev
+    /// builds were blocked from doing so). A release install's entry is left alone.
+    pub fn remove_stale_dev_entry(app: &AppHandle) {
+        let name = value_name(app);
+        match read_command(name) {
+            Ok(Some(command)) if is_dev_command(&command) => {
+                match remove_entry(name) {
+                    Ok(()) => eprintln!("autostart: removed stale dev-build entry: {command}"),
+                    Err(error) => eprintln!("autostart: could not remove dev entry: {error}"),
+                }
+            }
+            Ok(_) => {}
+            Err(error) => eprintln!("autostart: could not inspect Run entry: {error}"),
+        }
+    }
+}
+
+#[cfg(not(windows))]
+mod autostart {
+    use tauri::AppHandle;
+    use tauri_plugin_autostart::ManagerExt;
+
+    pub fn is_enabled(app: &AppHandle) -> Result<bool, String> {
+        app.autolaunch()
+            .is_enabled()
+            .map_err(|error| format!("Could not read launch-at-sign-in status: {error}"))
+    }
+
+    pub fn set(app: &AppHandle, enabled: bool) -> Result<(), String> {
+        let autolaunch = app.autolaunch();
+        let result = if enabled { autolaunch.enable() } else { autolaunch.disable() };
+        result.map_err(|error| format!("Could not set launch-at-sign-in to {enabled}: {error}"))
+    }
+
+    pub fn remove_stale_dev_entry(_app: &AppHandle) {}
+}
+
+fn autostart_enabled(app: &AppHandle) -> Result<bool, String> {
+    if !AUTOSTART_AVAILABLE {
+        return Ok(false);
+    }
+    autostart::is_enabled(app)
+}
 
 fn set_autostart(app: &AppHandle, enabled: bool) -> Result<(), String> {
-    let autolaunch = app.autolaunch();
-    if let Err(error) = if enabled {
-        autolaunch.enable()
-    } else {
-        autolaunch.disable()
-    } {
-        let message = format!("Could not set launch-at-sign-in to {enabled}: {error}");
-        eprintln!("autostart: {message}");
-        return Err(message);
+    if !AUTOSTART_AVAILABLE {
+        // Disabling is a no-op so a dev "reset" can't touch a real install's entry.
+        return if enabled {
+            Err("Open at sign-in isn't available in dev builds".to_owned())
+        } else {
+            Ok(())
+        };
     }
-    Ok(())
+    autostart::set(app, enabled).inspect_err(|message| eprintln!("autostart: {message}"))
 }
 
 // ---------------------------------------------------------------------------
@@ -1348,21 +1520,6 @@ fn restore_widget(app: &AppHandle) {
 // Commands
 // ---------------------------------------------------------------------------
 
-fn options_view(app: &AppHandle, options: Options) -> Result<OptionsView, String> {
-    let open_at_login = app
-        .autolaunch()
-        .is_enabled()
-        .map_err(|error| format!("Could not read launch-at-sign-in status: {error}"))?;
-    Ok(options_view_with_autostart(options, open_at_login))
-}
-
-fn options_view_with_autostart(options: Options, open_at_login: bool) -> OptionsView {
-    OptionsView {
-        options,
-        open_at_login,
-    }
-}
-
 #[tauri::command]
 fn get_options(app: AppHandle, store: State<'_, SettingsStore>) -> Result<OptionsView, String> {
     options_view(&app, store.options())
@@ -1389,23 +1546,19 @@ fn save_options(
     store: State<'_, SettingsStore>,
     patch: OptionsPatch,
 ) -> Result<OptionsView, String> {
+    if !AUTOSTART_AVAILABLE && patch.open_at_login.is_some() {
+        return Err("Open at sign-in isn't available in dev builds".to_owned());
+    }
     let previous_autostart = patch
         .open_at_login
-        .map(|_| {
-            app.autolaunch()
-                .is_enabled()
-                .map_err(|error| format!("Could not read launch-at-sign-in status: {error}"))
-        })
+        .map(|_| autostart_enabled(&app))
         .transpose()?;
     let open_at_login = match patch.open_at_login {
         Some(enabled) => {
             set_autostart(&app, enabled)?;
             enabled
         }
-        None => app
-            .autolaunch()
-            .is_enabled()
-            .map_err(|error| format!("Could not read launch-at-sign-in status: {error}"))?,
+        None => autostart_enabled(&app)?,
     };
 
     let options = match store.update(|settings| {
@@ -1476,11 +1629,9 @@ fn update_transparency_level(
 
 #[tauri::command]
 fn reset_options(app: AppHandle, store: State<'_, SettingsStore>) -> Result<OptionsView, String> {
-    let previous_autostart = app
-        .autolaunch()
-        .is_enabled()
-        .map_err(|error| format!("Could not read launch-at-sign-in status: {error}"))?;
+    let previous_autostart = autostart_enabled(&app)?;
     set_autostart(&app, false)?;
+
     let options = match store.update(|settings| {
         settings.options = Options::default();
         settings.options.clone()
@@ -1526,10 +1677,12 @@ async fn open_options_window(app: AppHandle) -> Result<(), String> {
         return existing.set_focus().map_err(|e| e.to_string());
     }
 
+    let height = if cfg!(debug_assertions) { 720.0 } else { 600.0 };
+
     let mut builder =
         WebviewWindowBuilder::new(&app, OPTIONS_LABEL, WebviewUrl::App("options.html".into()))
             .title("Widget Options")
-            .inner_size(560.0, 530.0)
+            .inner_size(560.0, height)
             .resizable(false)
             .minimizable(false)
             .maximizable(false);
@@ -1758,9 +1911,8 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         settings.options.toggle_on_desktop_double_click,
         settings.options.desktop_toggle_action,
     );
-    remove_legacy_electron_autostart();
-    // Autostart is intentionally NOT re-synced from settings here: the OS entry is the
-    // source of truth, so disabling it in Task Manager sticks.
+    remove_legacy_electron_autostart(&handle.package_info().name);
+    autostart::remove_stale_dev_entry(&handle);
 
     let main_window = app
         .get_webview_window(MAIN_LABEL)

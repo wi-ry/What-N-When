@@ -14,6 +14,9 @@ const cancelButton = document.getElementById('cancel-btn');
 const status = document.getElementById('status');
 const listenerDebugOutput = document.getElementById('listener-debug-output');
 
+const openAtLoginRow =
+  openAtLoginCheckbox.closest('label') ?? openAtLoginCheckbox.parentElement;
+
 const invoke = window.__TAURI__.core.invoke;
 let options = {};
 let debugInterval;
@@ -45,6 +48,12 @@ function updateTransparencySectionVisibility() {
 function applyOptionsToForm(view) {
   rememberBoundsCheckbox.checked = Boolean(view.rememberWindowBounds);
   openAtLoginCheckbox.checked = Boolean(view.openAtLogin);
+  const autostartAvailable = Boolean(view.openAtLoginAvailable);
+  openAtLoginCheckbox.disabled = !autostartAvailable;
+  openAtLoginRow.title = autostartAvailable
+    ? ''
+    : 'Unavailable in dev builds: it would register the debug executable to run at sign-in. Use an installed release build to change this.';
+  openAtLoginRow.classList.toggle('is-disabled', !autostartAvailable);
   desktopDoubleClickCheckbox.checked = Boolean(view.toggleOnDesktopDoubleClick);
   desktopToggleActionInputs.forEach((input) => {
     input.checked = input.value === (view.desktopToggleAction || 'hide');
