@@ -1992,3 +1992,163 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static TEMP_ID: AtomicUsize = AtomicUsize::new(0);
+
+    fn temp_path(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "what-n-when-tests-{}-{}-{}",
+            std::process::id(),
+            TEMP_ID.fetch_add(1, Ordering::Relaxed),
+            name
+        ))
+    }
+
+    #[test]
+    fn host_matching_requires_a_domain_boundary() {
+        assert!(host_matches("notion.so", "notion.so"));
+        assert!(host_matches("calendar.notion.so", "notion.so"));
+        assert!(!host_matches("notion.so.attacker.example", "notion.so"));
+        assert!(!host_matches("notion-so", "notion.so"));
+    }
+
+    #[test]
+    fn popup_routing_keeps_notion_and_identity_providers_in_app() {
+        for address in [
+            "https://calendar.notion.so/",
+            "https://notion.so/login",
+            "https://accounts.google.com/signin",
+            "https://login.microsoftonline.com/",
+            "about:blank",
+        ] {
+            assert!(is_auth_popup(&Url::parse(address).unwrap()), "{address}");
+        }
+
+        for address in [
+            "https://example.com/",
+            "https://notion.so.attacker.example/",
+            "file:///tmp/example",
+        ] {
+            assert!(!is_auth_popup(&Url::parse(address).unwrap()), "{address}");
+        }
+    }
+
+    #[test]
+    fn internal_navigation_only_allows_trusted_hosts_and_embedded_schemes() {
+        for address in [
+            "https://calendar.notion.so/",
+            "https://idmsa.apple.com/",
+            "about:blank",
+            "blob:https://calendar.notion.so/id",
+            "data:text/plain,hello",
+        ] {
+            assert!(is_internal_url(&Url::parse(address).unwrap()), "{address}");
+        }
+
+        for address in ["https://example.com/", "https://notion.so.attacker.example/"] {
+            assert!(!is_internal_url(&Url::parse(address).unwrap()), "{address}");
+        }
+    }
+
+    #[test]
+    fn popup_callback_requires_a_notion_host_and_callback_path() {
+        assert!(is_popup_callback(
+            &Url::parse("https://notion.so/googlepopupcallback").unwrap()
+        ));
+        assert!(is_popup_callback(
+            &Url::parse("https://www.notion.com/microsoftpopupcallback").unwrap()
+        ));
+        assert!(!is_popup_callback(
+            &Url::parse("https://notion.so/login").unwrap()
+        ));
+        assert!(!is_popup_callback(
+            &Url::parse("https://example.com/googlepopupcallback").unwrap()
+        ));
+    }
+
+    #[test]
+    fn settings_store_loads_defaults_and_persists_updates() {
+        let directory = temp_path("settings");
+        let path = directory.join("settings.json");
+        let store = SettingsStore::load(path.clone());
+
+        assert!(store.options().remember_window_bounds);
+        assert!(!store.options().toggle_on_desktop_double_click);
+        assert_eq!(store.options().transparency_level, 64);
+
+        store
+            .update(|settings| {
+                settings.options.remember_window_bounds = false;
+                settings.options.transparency_level = 120;
+                settings.window_bounds = Some(WindowBounds {
+                    x: -100,
+                    y: 50,
+                    width: 800,
+                    height: 600,
+                });
+            })
+            .unwrap();
+
+        let reloaded = SettingsStore::load(path);
+        let settings = reloaded.snapshot();
+        assert!(!settings.options.remember_window_bounds);
+        assert_eq!(settings.options.transparency_level, 120);
+        let bounds = settings.window_bounds.unwrap();
+        assert_eq!((bounds.x, bounds.y, bounds.width, bounds.height), (-100, 50, 800, 600));
+
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn settings_store_clamps_transparency_when_loading() {
+        let directory = temp_path("clamp");
+        fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("settings.json");
+        fs::write(
+            &path,
+            r#"{"options":{"transparencyLevel":255},"windowBounds":null}"#,
+        )
+        .unwrap();
+
+        let store = SettingsStore::load(path);
+        assert_eq!(store.options().transparency_level, MAX_TRANSPARENCY_LEVEL);
+
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn failed_settings_write_does_not_change_cached_state() {
+        let directory = temp_path("write-failure");
+        fs::create_dir_all(&directory).unwrap();
+        let blocked_parent = directory.join("not-a-directory");
+        fs::write(&blocked_parent, "file").unwrap();
+        let store = SettingsStore::load(blocked_parent.join("settings.json"));
+
+        let result = store.update(|settings| {
+            settings.options.remember_window_bounds = false;
+        });
+
+        assert!(result.is_err());
+        assert!(store.options().remember_window_bounds);
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn calendar_bounds_convert_physical_size_and_reserve_titlebar() {
+        let (position, size) = calendar_bounds(PhysicalSize::new(1600, 1200), 2.0);
+        assert_eq!((position.x, position.y), (0.0, TITLEBAR_HEIGHT));
+        assert_eq!((size.width, size.height), (800.0, 560.0));
+    }
+
+    #[test]
+    fn calendar_bounds_never_return_a_negative_height() {
+        let (_, size) = calendar_bounds(PhysicalSize::new(100, 20), 1.0);
+        assert_eq!(size.height, 0.0);
+    }
+}

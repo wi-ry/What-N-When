@@ -205,12 +205,11 @@ public sealed class WidgetProvider : IWidgetProvider
             model[$"weekday{weekday}"] = dateFormat.GetAbbreviatedDayName(dayOfWeek)[..1];
         }
 
-        var firstOfMonth = new DateTime(now.Year, now.Month, 1);
-        var firstDayOffset = ((int)firstOfMonth.DayOfWeek - (int)firstDayOfWeek + 7) % 7;
+        var calendarDays = CalendarGrid.CreateMonth(now, firstDayOfWeek);
         var todayMarker = CreateTodayMarkerDataUri(now.Day);
-        for (var cell = 0; cell < 42; cell++)
+        for (var cell = 0; cell < calendarDays.Length; cell++)
         {
-            var date = firstOfMonth.AddDays(cell - firstDayOffset);
+            var date = calendarDays[cell];
             var isCurrentDay = date.Date == now.Date;
             model[$"day{cell}"] = date.Day.ToString(CultureInfo.CurrentCulture);
             model[$"color{cell}"] = date.Month == now.Month ? "Default" : "Light";
