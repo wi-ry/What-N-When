@@ -28,6 +28,7 @@ use tauri_plugin_opener::OpenerExt;
 const MAIN_LABEL: &str = "main";
 const CALENDAR_LABEL: &str = "calendar";
 const OPTIONS_LABEL: &str = "options";
+const CALENDAR_URL: &str = "https://calendar.notion.so/";
 const TITLEBAR_HEIGHT: f64 = 40.0;
 const MAX_TRANSPARENCY_LEVEL: u8 = 230;
 const MIN_VISIBLE_PX: i64 = 100;

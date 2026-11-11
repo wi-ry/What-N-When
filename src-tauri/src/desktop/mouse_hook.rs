@@ -1,16 +1,16 @@
 use super::*;
-use super::hit_testing::{classify_window, click_hits_icon, Surface};
+use super::hit_testing::{classify_window, click_hits_icon};
 
 // ----- mouse hook ------------------------------------------------------
 
 #[derive(Clone, Copy)]
-pub(super) struct ClickEvent {
+struct ClickEvent {
     pt: POINT,
     /// `MSLLHOOKSTRUCT::time`: when the click happened (ms since boot).
     time: u32,
 }
 
-pub(super) fn run_hook_thread() {
+fn run_hook_thread() {
     // SAFETY: standard low-level-hook setup. The hook is installed on this thread,
     // which then pumps messages (required for WH_MOUSE_LL callbacks to run).
     unsafe {
@@ -69,7 +69,7 @@ unsafe extern "system" fn mouse_hook(code: i32, wparam: WPARAM, lparam: LPARAM) 
     unsafe { CallNextHookEx(std::ptr::null_mut(), code, wparam, lparam) }
 }
 
-pub(super) fn click_worker(app: AppHandle, clicks: Receiver<ClickEvent>) {
+fn click_worker(app: AppHandle, clicks: Receiver<ClickEvent>) {
     let mut previous: Option<ClickEvent> = None;
 
     for click in clicks {

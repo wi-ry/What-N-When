@@ -1,37 +1,31 @@
 use super::*;
 
-fn restore_widget(app: &AppHandle) {
-    if let Err(error) = desktop::restore(app) {
-        eprintln!("could not restore widget: {error}");
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub(super) fn get_options(app: AppHandle, store: State<'_, SettingsStore>) -> Result<OptionsView, String> {
+fn get_options(app: AppHandle, store: State<'_, SettingsStore>) -> Result<OptionsView, String> {
     options_view(&app, store.options())
 }
 
 #[tauri::command]
-pub(super) fn is_debug_build() -> bool {
+fn is_debug_build() -> bool {
     cfg!(debug_assertions)
 }
 
 #[tauri::command]
-pub(super) fn get_desktop_listener_debug() -> desktop::DesktopListenerDebug {
+fn get_desktop_listener_debug() -> desktop::DesktopListenerDebug {
     desktop::debug_snapshot()
 }
 
 #[tauri::command]
-pub(super) fn test_desktop_toggle(app: AppHandle) -> Result<(), String> {
+fn test_desktop_toggle(app: AppHandle) -> Result<(), String> {
     desktop::test_toggle(&app)
 }
 
 #[tauri::command]
-pub(super) fn save_options(
+fn save_options(
     app: AppHandle,
     store: State<'_, SettingsStore>,
     patch: OptionsPatch,
@@ -104,7 +98,7 @@ pub(super) fn save_options(
 }
 
 #[tauri::command]
-pub(super) fn update_transparency_level(
+fn update_transparency_level(
     app: AppHandle,
     store: State<'_, SettingsStore>,
     transparency_level: u8,
@@ -118,7 +112,7 @@ pub(super) fn update_transparency_level(
 }
 
 #[tauri::command]
-pub(super) fn reset_options(app: AppHandle, store: State<'_, SettingsStore>) -> Result<OptionsView, String> {
+fn reset_options(app: AppHandle, store: State<'_, SettingsStore>) -> Result<OptionsView, String> {
     let previous_autostart = autostart_enabled(&app)?;
     set_autostart(&app, false)?;
 
@@ -145,14 +139,14 @@ pub(super) fn reset_options(app: AppHandle, store: State<'_, SettingsStore>) -> 
 }
 
 #[tauri::command]
-pub(super) async fn close_window(window: tauri::Window) {
+async fn close_window(window: tauri::Window) {
     if let Err(error) = window.close() {
         eprintln!("could not close window: {error}");
     }
 }
 
 #[tauri::command]
-pub(super) fn refresh_calendar(app: AppHandle) {
+fn refresh_calendar(app: AppHandle) {
     if let Some(webview) = app.get_webview(CALENDAR_LABEL) {
         if let Err(error) = webview.eval("location.reload()") {
             eprintln!("could not reload calendar: {error}");
@@ -162,7 +156,7 @@ pub(super) fn refresh_calendar(app: AppHandle) {
 
 // Async on purpose: creating windows from a sync command can deadlock on Windows.
 #[tauri::command]
-pub(super) async fn open_options_window(app: AppHandle) -> Result<(), String> {
+async fn open_options_window(app: AppHandle) -> Result<(), String> {
     if let Some(existing) = app.get_webview_window(OPTIONS_LABEL) {
         return existing.set_focus().map_err(|e| e.to_string());
     }

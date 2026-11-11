@@ -30,7 +30,7 @@ pub(super) fn remove_legacy_electron_autostart(current_name: &str) {
 }
 
 #[cfg(not(windows))]
-fn remove_legacy_electron_autostart(_current_name: &str) {}
+pub(super) fn remove_legacy_electron_autostart(_current_name: &str) {}
 
 #[cfg(windows)]
 mod platform {
