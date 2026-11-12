@@ -78,8 +78,6 @@ The Windows widget is registered only by the MSIX package. It is not available i
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full Windows development setup, Rust formatting commands, local checks, tests, and Git hook details.
-
 ### Git Hooks
 
 Husky installs two hooks when dependencies are installed:
@@ -87,7 +85,7 @@ Husky installs two hooks when dependencies are installed:
 - **Pre-commit:** runs `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` to ensure Rust code is formatted.
 - **Pre-push:** runs `npm run check` and `npm run build:debug` to catch JavaScript syntax errors and debug-build failures before pushing.
 
-The pre-commit hook requires Rust stable and the `rustfmt` component. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions.
+The pre-commit hook requires Rust stable and the `rustfmt` component. See the Rust setup instructions in the repository's developer guide.
 
 To bypass a hook (not recommended), use `git commit --no-verify` or `git push --no-verify` for the corresponding operation.
 
