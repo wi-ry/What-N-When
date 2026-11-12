@@ -1,0 +1,119 @@
+name: Recover Release Assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release to rebuild
+        required: true
+        type: choice
+        options:
+          - v5.1.13
+          - v5.1.14
+
+permissions:
+  contents: write
+
+concurrency:
+  group: recover-release-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout recovery scripts
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          path: recovery-tools
+
+      - name: Checkout release source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.release_tag }}
+          path: app
+
+      - name: Verify existing GitHub Release
+        id: verify-existing-release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          gh release view $env:RELEASE_TAG --repo ${{ github.repository }} | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            throw "GitHub Release $env:RELEASE_TAG does not exist. Refusing to create a new release."
+          }
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+          shared-key: tauri-windows
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Set application version
+        working-directory: app
+        env:
+          RELEASE_VERSION: ${{ steps.verify-existing-release.outputs.version }}
+        run: npm version "$env:RELEASE_VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Build Tauri app
+        working-directory: app
+        run: npm run build
+
+      - name: Package MSIX
+        working-directory: app
+        shell: pwsh
+        run: .github/scripts/package-msix.ps1
+
+      - name: Prepare portable executable
+        working-directory: app
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.verify-existing-release.outputs.version }}
+        run: |
+          Copy-Item `
+            "src-tauri/target/release/what-n-when.exe" `
+            "src-tauri/target/release/What-N-When_$($env:RELEASE_VERSION)_x64-portable.exe"
+
+      - name: Use current release validator
+        shell: pwsh
+        run: |
+          Copy-Item `
+            "recovery-tools/.github/scripts/validate-release.ps1" `
+            "app/.github/scripts/validate-release.ps1" -Force
+
+      - name: Validate release packages
+        working-directory: app
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.verify-existing-release.outputs.version }}
+        run: .github/scripts/validate-release.ps1 -Version $env:RELEASE_VERSION
+
+      - name: Upload assets to existing release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          fail_on_unmatched_files: true
+          files: |
+            app/src-tauri/target/release/bundle/nsis/*.exe
+            app/src-tauri/target/release/bundle/msi/*.msi
+            app/src-tauri/target/release/What-N-When_${{ steps.verify-existing-release.outputs.version }}_x64-portable.exe
