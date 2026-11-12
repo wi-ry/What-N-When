@@ -164,15 +164,39 @@ try {
     }
 
     Write-Host 'Testing MSI installation and startup...'
-    $msiInstallDirectory = Join-Path $validationRoot 'msi-install'
-    New-Item -Path $msiInstallDirectory -ItemType Directory -Force | Out-Null
-    Invoke-MsiExec -Arguments @('/i', $msiInstaller.FullName, '/qn', '/norestart', "INSTALLDIR=$msiInstallDirectory")
+    $msiInstallLog = Join-Path $validationRoot 'msi-install.log'
+    Invoke-MsiExec -Arguments @('/i', $msiInstaller.FullName, '/qn', '/norestart', '/L*v', $msiInstallLog)
     try {
-        $msiExecutable = Get-ChildItem -Path $msiInstallDirectory -Filter 'what-n-when.exe' -File -Recurse |
-            Select-Object -First 1
-        if (-not $msiExecutable) {
-            throw 'MSI installation did not place what-n-when.exe in the requested installation directory.'
+        $uninstallRegistryPaths = @(
+            'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+            'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+            'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+        )
+        $installedProduct = foreach ($registryPath in $uninstallRegistryPaths) {
+            Get-ItemProperty -Path $registryPath -ErrorAction SilentlyContinue |
+                Where-Object { $_.DisplayName -eq 'What-N-When' }
         }
+        $installDirectories = @(
+            $installedProduct | ForEach-Object { $_.InstallLocation }
+            (Join-Path $env:ProgramFiles 'What-N-When')
+            (Join-Path ${env:ProgramFiles(x86)} 'What-N-When')
+        ) | Where-Object { $_ } | Select-Object -Unique
+
+        $msiExecutable = $null
+        foreach ($installDirectory in $installDirectories) {
+            if (Test-Path -LiteralPath $installDirectory -PathType Container) {
+                $msiExecutable = Get-ChildItem -LiteralPath $installDirectory -Filter 'what-n-when.exe' -File -Recurse |
+                    Select-Object -First 1
+                if ($msiExecutable) {
+                    break
+                }
+            }
+        }
+        if (-not $msiExecutable) {
+            $registeredLocations = @($installedProduct | ForEach-Object { $_.InstallLocation } | Where-Object { $_ }) -join ', '
+            throw "MSI installation did not expose what-n-when.exe. Registered install locations: '$registeredLocations'. See verbose log: $msiInstallLog"
+        }
+        Write-Host "MSI installed application: $($msiExecutable.FullName)"
         Test-ApplicationLaunch -Executable $msiExecutable.FullName -Description 'MSI-installed application'
     }
     finally {
