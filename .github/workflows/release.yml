@@ -125,10 +125,10 @@ jobs:
 
           # 2. Turn the markdown notes into plain text that fits the Store limit
           $notes = $env:RELEASE_NOTES
-          $notes = $notes -replace '\\[([^\\]]+)\\]\\([^)]+\\)', '$1'   # [text](url) -> text
-          $notes = $notes -replace '\\s*\\([0-9a-f]{7,}\\)', ''       # drop "(abc1234)" commit refs
-          $notes = $notes -replace '(?m)^#+\\s*', ''                # drop heading markers
-          $notes = $notes -replace '\\*\\*', ''                      # drop bold markers
+          $notes = $notes -replace '\[([^\]]+)\]\([^)]+\)', '$1'   # [text](url) -> text
+          $notes = $notes -replace '\s*\([0-9a-f]{7,}\)', ''       # drop "(abc1234)" commit refs
+          $notes = $notes -replace '(?m)^#+\s*', ''                # drop heading markers
+          $notes = $notes -replace '\*\*', ''                      # drop bold markers
           $notes = $notes.Trim()
           if ($notes.Length -gt 1500) { $notes = $notes.Substring(0, 1497) + '...' }
 
