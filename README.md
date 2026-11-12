@@ -78,31 +78,32 @@ The Windows widget is registered only by the MSIX package. It is not available i
 
 ## Development
 
-### Pre-push Hooks
+### Git Hooks
 
-A Husky pre-push hook runs `npm run check` and `npm run build` before every push. This catches syntax errors and build failures locally, preventing broken commits from reaching GitHub.
+Husky installs two hooks when dependencies are installed:
 
-If you need to bypass the hook (not recommended):
-```powershell
-git push --no-verify
-```
+- **Pre-commit:** runs `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` to ensure Rust code is formatted.
+- **Pre-push:** runs `npm run check` and `npm run build:debug` to catch JavaScript syntax errors and debug-build failures before pushing.
+
+The pre-commit hook requires Rust stable and the `rustfmt` component to be installed.
+
+To bypass a hook (not recommended), use `git commit --no-verify` or `git push --no-verify` for the corresponding operation.
 
 ## CI/CD
 
-- CI workflow: `.github/workflows/ci.yml`
-	- Runs on push and pull request
-	- Installs dependencies with `npm ci`
-	- Runs syntax validation (`npm run check`)
-	- Builds the Tauri app (`npm run build`) and uploads the NSIS/MSI installers as artifacts
-- Commit policy workflow: `.github/workflows/conventional-commits.yml`
-	- Runs on pull requests
-	- Validates PR title follows Conventional Commits
-	- Lints commit messages in the PR range with commitlint
-- Release workflow: `.github/workflows/release.yml`
-	- Runs after `CI` completes successfully for `main`
-	- Uses `semantic-release` to generate version tags and GitHub releases
-	- Builds the Windows installers and uploads them as release assets when a new release is published
+The CI workflow (`.github/workflows/ci.yml`) runs on pull requests and pushes to `main`. Independent jobs run in parallel:
 
+- **Node.js:** installs dependencies, runs `npm run check` and `npm test`, and validates PR titles and commit messages on pull requests.
+- **Rust:** checks formatting, compiles with `cargo check`, and runs `cargo test`.
+- **.NET:** runs the Windows widget-provider test project.
+- **Windows build:** validates the Tauri app build on pull requests and creates the application installers on pushes to `main`.
+- **CI gate:** fails unless every required job succeeds.
+
+Superseded runs in the same workflow/ref are cancelled automatically.
+
+The release workflow (`.github/workflows/release.yml`) runs after successful CI on `main`. It uses semantic-release to create version tags and GitHub releases, builds the Windows installers and portable executable, and publishes the MSIX package to the Microsoft Store when a release is created.
+
+Pull request titles and commit messages are checked against Conventional Commits by the CI workflow.
 ## Semantic Versioning
 
 Releases are automatically generated from commit messages using [Conventional Commits](https://www.conventionalcommits.org/) and semantic-release.
