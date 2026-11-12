@@ -63,6 +63,10 @@ The pre-commit hook requires Rust and rustfmt to be installed. Run the correspon
 
 ## Pull requests and CI
 
-GitHub Actions runs the Node.js checks and tests, Rust formatting/compilation/tests, .NET widget-provider tests, and a Windows application build as separate jobs. All jobs must pass the CI gate before a change is considered green.
+The CI workflow runs on pull requests. It runs the Node.js syntax checks and unit tests, Rust formatting/compilation/unit tests, .NET widget-provider tests, and a Windows application build/MSIX packaging job as separate jobs. All jobs must pass the CI gate before a pull request is considered green.
 
-See [README.md](README.md) for application features, packaging, release, and signing instructions.
+The semantic-release workflow is separate: it runs on pushes to `main` and is not configured to wait for the pull-request CI workflow. When semantic-release publishes a new version, the release workflow builds and validates the Windows release artifacts, uploads the NSIS/MSI installers and portable executable to the GitHub release, and submits the MSIX package to the Microsoft Store.
+
+For a missing GitHub release asset, the manually triggered **Recover Release Assets** workflow can rebuild and upload the NSIS installer, MSI installer, and portable executable to an existing release. It verifies that the release already exists before uploading. Its selectable tag list is maintained in `.github/workflows/recover-release-assets.yml`.
+
+See [README.md](README.md) for application features, packaging, release validation, recovery, and signing instructions.
