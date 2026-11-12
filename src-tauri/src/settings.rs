@@ -13,7 +13,7 @@ pub(super) struct WindowBounds {
     pub(super) height: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub(super) enum DesktopToggleAction {
     #[default]
