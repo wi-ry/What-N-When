@@ -76,10 +76,20 @@ try {
     Write-Host 'Validating MSIX package contents...'
     $makeAppx = Get-Command makeappx.exe -ErrorAction SilentlyContinue
     if (-not $makeAppx) {
-        throw 'makeappx.exe is required to validate the MSIX package.'
+        $sdkRoots = @($env:WindowsSdkDir, ${env:ProgramFiles(x86)}, $env:ProgramFiles) |
+            Where-Object { $_ } |
+            ForEach-Object { Join-Path $_ 'Windows Kits\10\bin' }
+        $makeAppx = Get-ChildItem -Path $sdkRoots -Filter 'makeappx.exe' -File -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.Directory.Name -eq 'x64' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
     }
+    if (-not $makeAppx) {
+        throw 'makeappx.exe was not found in PATH or the Windows SDK.'
+    }
+    $makeAppxPath = if ($makeAppx.PSObject.Properties.Name -contains 'Source') { $makeAppx.Source } else { $makeAppx.FullName }
     $msixDirectory = Join-Path $validationRoot 'msix'
-    & $makeAppx.Source unpack /p $msixPackage.FullName /d $msixDirectory /o
+    & $makeAppxPath unpack /p $msixPackage.FullName /d $msixDirectory /o
     if ($LASTEXITCODE -ne 0) {
         throw "makeappx.exe could not unpack the MSIX package (exit code $LASTEXITCODE)."
     }
