@@ -1,13 +1,13 @@
 name: Semantic Release
 
 on:
-  workflow_run:
-    workflows:
-      - CI
+  push:
     branches:
       - main
-    types:
-      - completed
+
+concurrency:
+  group: semantic-release-main
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -16,7 +16,6 @@ permissions:
 
 jobs:
   release:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     outputs:
       published: ${{ steps.semantic.outputs.new_release_published }}
@@ -28,7 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Run semantic-release
