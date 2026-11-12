@@ -122,10 +122,12 @@ mod platform {
 
     pub fn set(app: &AppHandle, enabled: bool) -> Result<(), String> {
         let name = value_name(app);
-        let result = if enabled { enable_io(name) } else { remove_entry(name) };
-        result.map_err(|error| {
-            format!("Could not set launch-at-sign-in to {enabled}: {error}")
-        })
+        let result = if enabled {
+            enable_io(name)
+        } else {
+            remove_entry(name)
+        };
+        result.map_err(|error| format!("Could not set launch-at-sign-in to {enabled}: {error}"))
     }
 
     fn normalize(text: &str) -> String {
@@ -148,12 +150,10 @@ mod platform {
     pub fn remove_stale_dev_entry(app: &AppHandle) {
         let name = value_name(app);
         match read_command(name) {
-            Ok(Some(command)) if is_dev_command(&command) => {
-                match remove_entry(name) {
-                    Ok(()) => eprintln!("autostart: removed stale dev-build entry: {command}"),
-                    Err(error) => eprintln!("autostart: could not remove dev entry: {error}"),
-                }
-            }
+            Ok(Some(command)) if is_dev_command(&command) => match remove_entry(name) {
+                Ok(()) => eprintln!("autostart: removed stale dev-build entry: {command}"),
+                Err(error) => eprintln!("autostart: could not remove dev entry: {error}"),
+            },
             Ok(_) => {}
             Err(error) => eprintln!("autostart: could not inspect Run entry: {error}"),
         }
@@ -173,7 +173,11 @@ mod platform {
 
     pub fn set(app: &AppHandle, enabled: bool) -> Result<(), String> {
         let autolaunch = app.autolaunch();
-        let result = if enabled { autolaunch.enable() } else { autolaunch.disable() };
+        let result = if enabled {
+            autolaunch.enable()
+        } else {
+            autolaunch.disable()
+        };
         result.map_err(|error| format!("Could not set launch-at-sign-in to {enabled}: {error}"))
     }
 

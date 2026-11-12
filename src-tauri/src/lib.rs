@@ -126,7 +126,6 @@ mod widget_activation {
     }
 }
 
-
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -151,11 +150,10 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::windows::calendar_bounds;
+    use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     static TEMP_ID: AtomicUsize = AtomicUsize::new(0);
@@ -210,7 +208,10 @@ mod tests {
             assert!(is_internal_url(&Url::parse(address).unwrap()), "{address}");
         }
 
-        for address in ["https://example.com/", "https://notion.so.attacker.example/"] {
+        for address in [
+            "https://example.com/",
+            "https://notion.so.attacker.example/",
+        ] {
             assert!(!is_internal_url(&Url::parse(address).unwrap()), "{address}");
         }
     }
@@ -259,7 +260,10 @@ mod tests {
         assert!(!settings.options.remember_window_bounds);
         assert_eq!(settings.options.transparency_level, 120);
         let bounds = settings.window_bounds.unwrap();
-        assert_eq!((bounds.x, bounds.y, bounds.width, bounds.height), (-100, 50, 800, 600));
+        assert_eq!(
+            (bounds.x, bounds.y, bounds.width, bounds.height),
+            (-100, 50, 800, 600)
+        );
 
         let _ = fs::remove_dir_all(directory);
     }

@@ -54,7 +54,10 @@ pub(super) struct OptionsView {
 }
 
 pub(super) fn options_view(app: &AppHandle, options: Options) -> Result<OptionsView, String> {
-    Ok(options_view_with_autostart(options, autostart_enabled(app)?))
+    Ok(options_view_with_autostart(
+        options,
+        autostart_enabled(app)?,
+    ))
 }
 
 pub(super) fn options_view_with_autostart(options: Options, open_at_login: bool) -> OptionsView {
