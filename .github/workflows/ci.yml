@@ -6,6 +6,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  pull-requests: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -18,6 +22,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -33,6 +39,16 @@ jobs:
 
       - name: Frontend unit tests
         run: npm test
+
+      - name: PR title lint
+        if: github.event_name == 'pull_request'
+        uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit message lint
+        if: github.event_name == 'pull_request'
+        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
   rust:
     name: Rust unit tests
@@ -123,3 +139,31 @@ jobs:
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/msix/*.msix
           if-no-files-found: error
+
+  ci-gate:
+    name: CI gate
+    runs-on: ubuntu-latest
+    needs:
+      - node
+      - rust
+      - dotnet
+      - build
+    if: always()
+
+    steps:
+      - name: Verify all CI jobs passed
+        env:
+          NODE_RESULT: ${{ needs.node.result }}
+          RUST_RESULT: ${{ needs.rust.result }}
+          DOTNET_RESULT: ${{ needs.dotnet.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          if [ "$NODE_RESULT" != "success" ] ||
+             [ "$RUST_RESULT" != "success" ] ||
+             [ "$DOTNET_RESULT" != "success" ] ||
+             [ "$BUILD_RESULT" != "success" ]; then
+            echo "CI failed: node=$NODE_RESULT rust=$RUST_RESULT dotnet=$DOTNET_RESULT build=$BUILD_RESULT"
+            exit 1
+          fi
+
+          echo "All CI jobs passed."
