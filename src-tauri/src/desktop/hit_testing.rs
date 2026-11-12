@@ -20,12 +20,37 @@ fn utf16_eq(units: &[u16], text: &str) -> bool {
     units.iter().copied().eq(text.encode_utf16())
 }
 
-/// Walks the ancestor chain of `start` and decides whether the click landed on the
-/// desktop (a window under `Progman`) rather than, say, a File Explorer window.
+/// Class names observed while walking from the hovered window to its ancestors.
+/// Keeping the matching here makes the actual Win32 class-name handling testable
+/// without creating real desktop or Explorer windows.
+#[derive(Default)]
+struct DesktopClassFlags {
+    saw_progman: bool,
+    saw_workerw: bool,
+    saw_shell_view: bool,
+    saw_explorer: bool,
+}
+
+impl DesktopClassFlags {
+    fn observe(&mut self, name: &[u16]) {
+        self.saw_progman |= utf16_eq(name, "Progman");
+        self.saw_workerw |= utf16_eq(name, "WorkerW");
+        self.saw_shell_view |= utf16_eq(name, "SHELLDLL_DefView");
+        self.saw_explorer |=
+            utf16_eq(name, "CabinetWClass") || utf16_eq(name, "ExploreWClass");
+    }
+
+    fn is_desktop_surface(&self) -> bool {
+        (self.saw_progman || self.saw_workerw)
+            && self.saw_shell_view
+            && !self.saw_explorer
+    }
+}
+
+/// Walks the ancestor chain of `start` and identifies the desktop icon view.
 ///
-/// NOTE: this requires `Progman`. On setups where the desktop is hosted by a
-/// `WorkerW` window instead (e.g. slideshow wallpaper), clicks won't match; accept
-/// `WorkerW` here too if you need to support that.
+/// Windows may host the icon view under Progman or under a WorkerW window
+/// (for example with slideshow wallpaper), so both host classes are supported.
 ///
 /// # Safety
 /// `start` must be null or a window handle.
@@ -39,7 +64,7 @@ pub(super) unsafe fn classify_window(start: HWND, want_chain: bool) -> Classifie
     }
 
     let mut chain = Vec::new(); // stays unallocated unless `want_chain`
-    let (mut saw_progman, mut saw_explorer) = (false, false);
+    let mut class_flags = DesktopClassFlags::default();
     let mut hovered_is_list_view = false;
     let mut buffer = [0u16; 64];
     let mut window = start;
@@ -49,8 +74,7 @@ pub(super) unsafe fn classify_window(start: HWND, want_chain: bool) -> Classifie
         let length = unsafe { GetClassNameW(window, buffer.as_mut_ptr(), buffer.len() as i32) };
         let name = &buffer[..length.max(0) as usize];
 
-        saw_progman |= utf16_eq(name, "Progman");
-        saw_explorer |= utf16_eq(name, "CabinetWClass") || utf16_eq(name, "ExploreWClass");
+        class_flags.observe(name);
         if depth == 0 {
             hovered_is_list_view = utf16_eq(name, "SysListView32");
         }
@@ -66,13 +90,67 @@ pub(super) unsafe fn classify_window(start: HWND, want_chain: bool) -> Classifie
     }
 
     Classified {
-        surface: if saw_progman && !saw_explorer {
+        surface: if class_flags.is_desktop_surface() {
             Surface::Desktop
         } else {
             Surface::Other
         },
         hovered_is_list_view,
         chain: chain.join(" > "),
+    }
+}
+
+
+#[cfg(test)]
+mod classification_tests {
+    use super::DesktopClassFlags;
+
+    fn classify(classes: &[&str]) -> bool {
+        let mut flags = DesktopClassFlags::default();
+        for class in classes {
+            flags.observe(&class.encode_utf16().collect::<Vec<_>>());
+        }
+        flags.is_desktop_surface()
+    }
+
+    #[test]
+    fn recognizes_progman_desktop_view_in_ancestor_chain() {
+        assert!(classify(&["SysListView32", "SHELLDLL_DefView", "Progman"]));
+    }
+
+    #[test]
+    fn recognizes_workerw_desktop_view_in_ancestor_chain() {
+        assert!(classify(&["SysListView32", "SHELLDLL_DefView", "WorkerW"]));
+    }
+
+    #[test]
+    fn recognizes_workerw_when_progman_is_not_in_chain() {
+        assert!(classify(&["SHELLDLL_DefView", "WorkerW"]));
+    }
+
+    #[test]
+    fn rejects_workerw_without_shell_view() {
+        assert!(!classify(&["SysListView32", "WorkerW"]));
+    }
+
+    #[test]
+    fn rejects_shell_view_without_desktop_host() {
+        assert!(!classify(&["SysListView32", "SHELLDLL_DefView"]));
+    }
+
+    #[test]
+    fn rejects_file_explorer_ancestor_even_with_desktop_markers() {
+        assert!(!classify(&[
+            "SysListView32",
+            "SHELLDLL_DefView",
+            "Progman",
+            "CabinetWClass",
+        ]));
+    }
+
+    #[test]
+    fn rejects_explorer_window_classes() {
+        assert!(!classify(&["SysListView32", "ExploreWClass"]));
     }
 }
 
