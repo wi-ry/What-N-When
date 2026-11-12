@@ -273,11 +273,7 @@ mod tests {
         let directory = temp_path("partial-settings");
         fs::create_dir_all(&directory).unwrap();
         let path = directory.join("settings.json");
-        fs::write(
-            &path,
-            r#"{ "options": { "rememberWindowBounds": false } }"#,
-        )
-        .unwrap();
+        fs::write(&path, r#"{ "options": { "rememberWindowBounds": false } }"#).unwrap();
 
         let store = SettingsStore::load(path);
         let options = store.options();
