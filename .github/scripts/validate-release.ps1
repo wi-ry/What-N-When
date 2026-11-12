@@ -90,14 +90,17 @@ try {
     }
     [xml]$manifest = Get-Content -LiteralPath $manifestPath -Raw
     $identity = $manifest.SelectSingleNode("//*[local-name()='Identity']")
-    if (-not $identity -or $identity.Name -ne '56890AusnadianProductions.NotionCalendarWidget') {
+    if (-not $identity -or $identity.GetAttribute('Name') -ne '56890AusnadianProductions.NotionCalendarWidget') {
         throw 'MSIX package identity does not match the expected What-N-When package identity.'
     }
 
     $expectedVersionParts = @($Version.Split('-')[0].Split('.'))
     while ($expectedVersionParts.Count -lt 4) { $expectedVersionParts += '0' }
     $expectedPackageVersion = $expectedVersionParts -join '.'
-    if ($identity.Version -ne $expectedPackageVersion) {
+    if ($identity.GetAttribute('Publisher') -ne 'CN=A878E59E-93F9-435A-9DFB-177C285947A6') {
+        throw 'MSIX package publisher does not match the expected package publisher.'
+    }
+    if ($identity.GetAttribute('Version') -ne $expectedPackageVersion) {
         throw "MSIX version '$($identity.Version)' does not match expected version '$expectedPackageVersion'."
     }
 
@@ -136,14 +139,17 @@ try {
     if (-not $installedExecutable) {
         throw 'NSIS installation did not contain what-n-when.exe.'
     }
-    Test-ApplicationLaunch -Executable $installedExecutable.FullName -Description 'NSIS-installed application'
-
-    $uninstaller = Get-ChildItem -Path $nsisInstallDirectory -Filter 'unins*.exe' -File |
-        Select-Object -First 1
-    if ($uninstaller) {
-        $uninstallProcess = Start-Process -FilePath $uninstaller.FullName -ArgumentList '/S' -Wait -PassThru
-        if ($uninstallProcess.ExitCode -ne 0) {
-            throw "NSIS uninstaller failed with exit code $($uninstallProcess.ExitCode)."
+    try {
+        Test-ApplicationLaunch -Executable $installedExecutable.FullName -Description 'NSIS-installed application'
+    }
+    finally {
+        $uninstaller = Get-ChildItem -Path $nsisInstallDirectory -Filter 'unins*.exe' -File |
+            Select-Object -First 1
+        if ($uninstaller) {
+            $uninstallProcess = Start-Process -FilePath $uninstaller.FullName -ArgumentList '/S' -Wait -PassThru
+            if ($uninstallProcess.ExitCode -ne 0) {
+                throw "NSIS uninstaller failed with exit code $($uninstallProcess.ExitCode)."
+            }
         }
     }
 
@@ -151,13 +157,17 @@ try {
     $msiInstallDirectory = Join-Path $validationRoot 'msi-install'
     New-Item -Path $msiInstallDirectory -ItemType Directory -Force | Out-Null
     Invoke-MsiExec -Arguments @('/i', $msiInstaller.FullName, '/qn', '/norestart', "INSTALLDIR=$msiInstallDirectory")
-    $msiExecutable = Get-ChildItem -Path $msiInstallDirectory -Filter 'what-n-when.exe' -File -Recurse |
-        Select-Object -First 1
-    if (-not $msiExecutable) {
-        throw 'MSI installation did not place what-n-when.exe in the requested installation directory.'
+    try {
+        $msiExecutable = Get-ChildItem -Path $msiInstallDirectory -Filter 'what-n-when.exe' -File -Recurse |
+            Select-Object -First 1
+        if (-not $msiExecutable) {
+            throw 'MSI installation did not place what-n-when.exe in the requested installation directory.'
+        }
+        Test-ApplicationLaunch -Executable $msiExecutable.FullName -Description 'MSI-installed application'
     }
-    Test-ApplicationLaunch -Executable $msiExecutable.FullName -Description 'MSI-installed application'
-    Invoke-MsiExec -Arguments @('/x', $msiInstaller.FullName, '/qn', '/norestart')
+    finally {
+        Invoke-MsiExec -Arguments @('/x', $msiInstaller.FullName, '/qn', '/norestart')
+    }
 
     Write-Host ("All release package validations passed for version {0}." -f $Version)
 }
