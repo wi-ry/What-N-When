@@ -39,7 +39,7 @@ jobs:
             conventional-changelog-conventionalcommits@9.3.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
   build-and-upload:
     needs: release
     if: ${{ needs.release.outputs.published == 'true' }}
@@ -68,6 +68,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Set application version
+        run: npm version "${{ needs.release.outputs.version }}" --no-git-tag-version --allow-same-version
 
       - name: Build Tauri app
         run: npm run build
@@ -122,10 +125,10 @@ jobs:
 
           # 2. Turn the markdown notes into plain text that fits the Store limit
           $notes = $env:RELEASE_NOTES
-          $notes = $notes -replace '\[([^\]]+)\]\([^)]+\)', '$1'   # [text](url) -> text
-          $notes = $notes -replace '\s*\([0-9a-f]{7,}\)', ''       # drop "(abc1234)" commit refs
-          $notes = $notes -replace '(?m)^#+\s*', ''                # drop heading markers
-          $notes = $notes -replace '\*\*', ''                      # drop bold markers
+          $notes = $notes -replace '\\[([^\\]]+)\\]\\([^)]+\\)', '$1'   # [text](url) -> text
+          $notes = $notes -replace '\\s*\\([0-9a-f]{7,}\\)', ''       # drop "(abc1234)" commit refs
+          $notes = $notes -replace '(?m)^#+\\s*', ''                # drop heading markers
+          $notes = $notes -replace '\\*\\*', ''                      # drop bold markers
           $notes = $notes.Trim()
           if ($notes.Length -gt 1500) { $notes = $notes.Substring(0, 1497) + '...' }
 
