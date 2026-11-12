@@ -56,7 +56,7 @@ cargo fmt --manifest-path src-tauri/Cargo.toml --all
 
 Husky installs the repository hooks when npm dependencies are installed:
 
-- **Pre-commit:** checks Rust formatting with `cargo fmt --check`.
+- **Pre-commit:** runs `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`.
 - **Pre-push:** runs `npm run check` and `npm run build:debug`.
 
 The pre-commit hook requires Rust and rustfmt to be installed. Run the corresponding commands above manually if hooks are unavailable.
