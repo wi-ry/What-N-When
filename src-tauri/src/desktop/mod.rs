@@ -303,7 +303,7 @@ use std::ffi::c_void;
 #[cfg(windows)]
 pub(super) use windows_impl::{
     apply_transparency_level, debug_snapshot, init, restore, restore_with_window,
-    set_listener_enabled, set_toggle_action, test_toggle, toggle,
+    set_listener_enabled, set_toggle_action, test_toggle,
 };
 
 #[cfg(not(windows))]
