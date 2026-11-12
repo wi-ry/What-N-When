@@ -1,3 +1,9 @@
+## [5.1.12](https://github.com/wi-ry/What-N-When/compare/v5.1.11...v5.1.12) (2026-11-12)
+
+### Bug Fixes
+
+* support WorkerW desktop icon hit testing ([#50](https://github.com/wi-ry/What-N-When/issues/50)) ([9785ed4](https://github.com/wi-ry/What-N-When/commit/9785ed4a0d34bca6fc5792258d1d0a5cb97766b3))
+
 ## [5.1.11](https://github.com/wi-ry/What-N-When/compare/v5.1.10...v5.1.11) (2026-11-12)
 
 ### Tests
