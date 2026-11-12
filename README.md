@@ -85,7 +85,7 @@ Husky installs two hooks when dependencies are installed:
 - **Pre-commit:** runs `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` to ensure Rust code is formatted.
 - **Pre-push:** runs `npm run check` and `npm run build:debug` to catch JavaScript syntax errors and debug-build failures before pushing.
 
-The pre-commit hook requires Rust stable and the `rustfmt` component. Rust stable and the `rustfmt` component must be installed for the pre-commit hook to work.
+The pre-commit hook requires Rust stable and the `rustfmt` component to be installed.
 
 To bypass a hook (not recommended), use `git commit --no-verify` or `git push --no-verify` for the corresponding operation.
 
@@ -104,11 +104,6 @@ Superseded runs in the same workflow/ref are cancelled automatically.
 The release workflow (`.github/workflows/release.yml`) runs after successful CI on `main`. It uses semantic-release to create version tags and GitHub releases, builds the Windows installers and portable executable, and publishes the MSIX package to the Microsoft Store when a release is created.
 
 Pull request titles and commit messages are checked against Conventional Commits by the CI workflow.
-- Release workflow: `.github/workflows/release.yml`
-	- Runs after `CI` completes successfully for `main`
-	- Uses `semantic-release` to generate version tags and GitHub releases
-	- Builds the Windows installers and uploads them as release assets when a new release is published
-
 ## Semantic Versioning
 
 Releases are automatically generated from commit messages using [Conventional Commits](https://www.conventionalcommits.org/) and semantic-release.
