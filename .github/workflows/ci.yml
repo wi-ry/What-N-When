@@ -107,7 +107,7 @@ jobs:
 
       - name: Package MSIX
         shell: pwsh
-        run: .github\scripts\\package-msix.ps1
+        run: .github\scripts\package-msix.ps1
 
       - name: Upload build artifact
         if: github.event_name == 'push'
