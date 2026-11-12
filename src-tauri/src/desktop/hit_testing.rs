@@ -36,14 +36,11 @@ impl DesktopClassFlags {
         self.saw_progman |= utf16_eq(name, "Progman");
         self.saw_workerw |= utf16_eq(name, "WorkerW");
         self.saw_shell_view |= utf16_eq(name, "SHELLDLL_DefView");
-        self.saw_explorer |=
-            utf16_eq(name, "CabinetWClass") || utf16_eq(name, "ExploreWClass");
+        self.saw_explorer |= utf16_eq(name, "CabinetWClass") || utf16_eq(name, "ExploreWClass");
     }
 
     fn is_desktop_surface(&self) -> bool {
-        (self.saw_progman || self.saw_workerw)
-            && self.saw_shell_view
-            && !self.saw_explorer
+        (self.saw_progman || self.saw_workerw) && self.saw_shell_view && !self.saw_explorer
     }
 }
 
@@ -99,7 +96,6 @@ pub(super) unsafe fn classify_window(start: HWND, want_chain: bool) -> Classifie
         chain: chain.join(" > "),
     }
 }
-
 
 #[cfg(test)]
 mod classification_tests {

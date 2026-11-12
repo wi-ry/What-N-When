@@ -60,12 +60,20 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
 
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
           shared-key: rust-tests
+
+      - name: Rust formatting
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+
+      - name: Rust compilation check
+        run: cargo check --manifest-path src-tauri/Cargo.toml
 
       - name: Rust unit tests
         run: cargo test --manifest-path src-tauri/Cargo.toml

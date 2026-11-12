@@ -61,8 +61,8 @@ pub(super) fn fade_to(app: &AppHandle, target: u8, end: FadeEnd) {
                 return;
             }
             let progress = f32::from(step) / f32::from(FADE_STEPS);
-            let alpha = (f32::from(from) + (f32::from(target) - f32::from(from)) * progress)
-                .round() as u8;
+            let alpha =
+                (f32::from(from) + (f32::from(target) - f32::from(from)) * progress).round() as u8;
 
             let frame_app = app.clone();
             let _ = app.run_on_main_thread(move || {

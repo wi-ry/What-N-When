@@ -11,7 +11,10 @@ fn restore_widget(app: &AppHandle) {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub(super) fn get_options(app: AppHandle, store: State<'_, SettingsStore>) -> Result<OptionsView, String> {
+pub(super) fn get_options(
+    app: AppHandle,
+    store: State<'_, SettingsStore>,
+) -> Result<OptionsView, String> {
     options_view(&app, store.options())
 }
 
@@ -118,7 +121,10 @@ pub(super) fn update_transparency_level(
 }
 
 #[tauri::command]
-pub(super) fn reset_options(app: AppHandle, store: State<'_, SettingsStore>) -> Result<OptionsView, String> {
+pub(super) fn reset_options(
+    app: AppHandle,
+    store: State<'_, SettingsStore>,
+) -> Result<OptionsView, String> {
     let previous_autostart = autostart_enabled(&app)?;
     set_autostart(&app, false)?;
 

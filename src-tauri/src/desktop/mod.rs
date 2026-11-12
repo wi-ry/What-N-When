@@ -29,7 +29,7 @@ mod windows_impl {
     use effects::*;
     use mouse_hook::ClickEvent;
 
-// Everything that touches Win32 lives here.
+    // Everything that touches Win32 lives here.
     //
     // Data flow: the `WH_MOUSE_LL` callback does almost nothing (it forwards the click
     // over a channel), because a slow low-level hook stalls mouse input system-wide.
@@ -39,7 +39,7 @@ mod windows_impl {
     // `restore`, `toggle` and `test_toggle` must be called on the main thread
     // (sync Tauri commands already run there).
 
-use std::ffi::c_void;
+    use std::ffi::c_void;
     use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
     use std::sync::mpsc::{self, Receiver, Sender};
     use std::sync::{Mutex, OnceLock, PoisonError};
@@ -313,7 +313,9 @@ pub(super) fn set_listener_enabled(_enabled: bool) {}
 #[cfg(not(windows))]
 pub(super) fn set_toggle_action(_action: DesktopToggleAction) {}
 #[cfg(not(windows))]
-pub(super) fn restore(_app: &AppHandle) -> Result<(), String> { Ok(()) }
+pub(super) fn restore(_app: &AppHandle) -> Result<(), String> {
+    Ok(())
+}
 #[cfg(not(windows))]
 pub(super) fn test_toggle(_app: &AppHandle) -> Result<(), String> {
     Err("Desktop toggle is only supported on Windows".to_owned())
