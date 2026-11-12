@@ -85,7 +85,7 @@ Husky installs two hooks when dependencies are installed:
 - **Pre-commit:** runs `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` to ensure Rust code is formatted.
 - **Pre-push:** runs `npm run check` and `npm run build:debug` to catch JavaScript syntax errors and debug-build failures before pushing.
 
-The pre-commit hook requires Rust stable and the `rustfmt` component. See the Rust setup instructions in the repository's developer guide.
+The pre-commit hook requires Rust stable and the `rustfmt` component. Rust stable and the `rustfmt` component must be installed for the pre-commit hook to work.
 
 To bypass a hook (not recommended), use `git commit --no-verify` or `git push --no-verify` for the corresponding operation.
 
