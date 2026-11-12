@@ -269,6 +269,46 @@ mod tests {
     }
 
     #[test]
+    fn settings_store_preserves_defaults_for_omitted_options() {
+        let directory = temp_path("partial-settings");
+        fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("settings.json");
+        fs::write(
+            &path,
+            r#"{ "options": { "rememberWindowBounds": false } }"#,
+        )
+        .unwrap();
+
+        let store = SettingsStore::load(path);
+        let options = store.options();
+
+        assert!(!options.remember_window_bounds);
+        assert!(!options.toggle_on_desktop_double_click);
+        assert_eq!(options.desktop_toggle_action, DesktopToggleAction::Hide);
+        assert_eq!(options.transparency_level, 64);
+
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn settings_store_recovers_from_malformed_json() {
+        let directory = temp_path("malformed-settings");
+        fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("settings.json");
+        fs::write(&path, r#"{ "options": "#).unwrap();
+
+        let store = SettingsStore::load(path);
+        let options = store.options();
+
+        assert!(options.remember_window_bounds);
+        assert!(!options.toggle_on_desktop_double_click);
+        assert_eq!(options.desktop_toggle_action, DesktopToggleAction::Hide);
+        assert_eq!(options.transparency_level, 64);
+
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
     fn settings_store_clamps_transparency_when_loading() {
         let directory = temp_path("clamp");
         fs::create_dir_all(&directory).unwrap();
