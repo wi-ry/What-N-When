@@ -6,8 +6,72 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  validate:
+  node:
+    name: Node.js checks and tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax checks
+        run: npm run check
+
+      - name: Frontend unit tests
+        run: npm test
+
+  rust:
+    name: Rust unit tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          shared-key: rust-tests
+
+      - name: Rust unit tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+  dotnet:
+    name: Windows widget provider tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Windows widget provider unit tests
+        run: dotnet test src-tauri/widget-provider.Tests/WhatNWhenWidgetProvider.Tests.csproj --configuration Release
+
+  build:
+    name: Build Windows app
     runs-on: windows-latest
 
     steps:
@@ -28,34 +92,14 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Cache Node dependencies
-        id: node-modules-cache
-        uses: actions/cache@v6
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
-
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          shared-key: tauri-windows
+          shared-key: windows-build
 
       - name: Install dependencies
-        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
-
-      - name: Syntax checks
-        run: npm run check
-
-      - name: Frontend unit tests
-        run: npm test
-
-      - name: Rust unit tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
-
-      - name: Windows widget provider unit tests
-        run: dotnet test src-tauri/widget-provider.Tests/WhatNWhenWidgetProvider.Tests.csproj --configuration Release
 
       - name: Build Tauri app for pull request validation
         if: github.event_name == 'pull_request'
