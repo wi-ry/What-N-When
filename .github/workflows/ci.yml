@@ -123,3 +123,31 @@ jobs:
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/msix/*.msix
           if-no-files-found: error
+
+  ci-gate:
+    name: CI gate
+    runs-on: ubuntu-latest
+    needs:
+      - node
+      - rust
+      - dotnet
+      - build
+    if: always()
+
+    steps:
+      - name: Verify all CI jobs passed
+        env:
+          NODE_RESULT: ${{ needs.node.result }}
+          RUST_RESULT: ${{ needs.rust.result }}
+          DOTNET_RESULT: ${{ needs.dotnet.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          if [ "$NODE_RESULT" != "success" ] ||
+             [ "$RUST_RESULT" != "success" ] ||
+             [ "$DOTNET_RESULT" != "success" ] ||
+             [ "$BUILD_RESULT" != "success" ]; then
+            echo "CI failed: node=$NODE_RESULT rust=$RUST_RESULT dotnet=$DOTNET_RESULT build=$BUILD_RESULT"
+            exit 1
+          fi
+
+          echo "All CI jobs passed."
