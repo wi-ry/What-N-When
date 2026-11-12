@@ -1,3 +1,13 @@
+## [5.1.11](https://github.com/wi-ry/What-N-When/compare/v5.1.10...v5.1.11) (2026-11-12)
+
+### Tests
+
+* add automated coverage for app logic ([#46](https://github.com/wi-ry/What-N-When/issues/46)) ([d9c3d54](https://github.com/wi-ry/What-N-When/commit/d9c3d54ff676675cc24f215f9208086c9c417215))
+
+### Continuous Integration
+
+* run validation tracks in parallel ([#49](https://github.com/wi-ry/What-N-When/issues/49)) ([2412336](https://github.com/wi-ry/What-N-When/commit/2412336ca67c9e3c4d5f9835bda2ad83ea3c6dcc))
+
 ## [5.1.10](https://github.com/wi-ry/What-N-When/compare/v5.1.9...v5.1.10) (2026-11-11)
 
 ### Continuous Integration
