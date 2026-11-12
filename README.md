@@ -91,17 +91,23 @@ To bypass a hook (not recommended), use `git commit --no-verify` or `git push --
 
 ## CI/CD
 
-The CI workflow (`.github/workflows/ci.yml`) runs on pull requests and pushes to `main`. Independent jobs run in parallel:
+The CI workflow (`.github/workflows/ci.yml`) runs on pull requests. Its independent jobs run in parallel:
 
-- **Node.js:** installs dependencies, runs `npm run check` and `npm test`, and validates PR titles and commit messages on pull requests.
-- **Rust:** checks formatting, compiles with `cargo check`, and runs `cargo test`.
+- **Node.js:** installs dependencies, runs `npm run check` and `npm test`, and validates pull request titles and commit messages against Conventional Commits.
+- **Rust:** checks formatting, runs `cargo check`, and runs `cargo test`.
 - **.NET:** runs the Windows widget-provider test project.
-- **Windows build:** validates the Tauri app build on pull requests and creates the application installers on pushes to `main`.
+- **Windows build:** builds the Tauri application without bundling installers, then assembles the MSIX package.
 - **CI gate:** fails unless every required job succeeds.
 
-Superseded runs in the same workflow/ref are cancelled automatically.
+Superseded CI runs for the same workflow/ref are cancelled automatically.
 
-The release workflow (`.github/workflows/release.yml`) runs after successful CI on `main`. It uses semantic-release to create version tags and GitHub releases, builds the Windows installers and portable executable, and publishes the MSIX package to the Microsoft Store when a release is created.
+The semantic-release workflow (`.github/workflows/release.yml`) runs separately on pushes to `main`; it does **not** wait for or depend on the pull-request CI workflow. It checks out the exact pushed commit and serializes release runs rather than cancelling an in-progress release. semantic-release creates a version tag and GitHub release when the Conventional Commit history warrants a release. Only when a new release is published does the Windows build job run: it synchronizes the application version, builds the NSIS and MSI installers plus the portable executable, packages the MSIX, validates the release artifacts, uploads the installers and portable executable to the GitHub release, and submits the MSIX to the Microsoft Store.
+
+Before uploading, `.github/scripts/validate-release.ps1` checks that the portable executable starts, installs and starts the NSIS and MSI applications, and unpacks the MSIX to verify its identity, publisher, version, and required files. This is a structural/content check for MSIX; it does not install or launch the MSIX package.
+
+### Recovering missing GitHub release assets
+
+The manual workflow `.github/workflows/recover-release-assets.yml` can rebuild assets for an existing GitHub release and upload them without creating a new release. In GitHub Actions, select **Recover Release Assets**, choose one of the workflow's configured release tags, and run it. The workflow first verifies that the GitHub release exists, builds from the selected tag, applies the current release validator, and uploads the NSIS installer, MSI installer, and portable executable to that existing release. It does not publish the MSIX to the Microsoft Store. Keep the workflow's tag choices current when adding or retiring recovery targets.
 
 Pull request titles and commit messages are checked against Conventional Commits by the CI workflow.
 ## Semantic Versioning
@@ -123,10 +129,10 @@ Commit messages follow this structure:
 The commit type determines the version bump:
 
 - `feat:` → minor version bump (e.g., 1.0.0 → 1.1.0)
-- `fix:` → patch version bump (e.g., 1.0.0 → 1.0.1)
+- `fix:` and `perf:` → patch version bump (e.g., 1.0.0 → 1.0.1)
 - `feat!:` or `BREAKING CHANGE:` → major version bump (e.g., 1.0.0 → 2.0.0)
-- `refactor:`, `style:`, `docs:`, `chore:`, etc. → patch version bump
-- Other commit types do not trigger a release
+- `build:`, `chore:`, `ci:`, and `docs:` → patch version bump (configured explicitly in `.releaserc.json`)
+- Other commit types do not trigger a release unless they contain a breaking change
 
 ### Examples
 
