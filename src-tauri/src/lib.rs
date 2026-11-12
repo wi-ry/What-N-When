@@ -1284,11 +1284,12 @@ mod desktop {
     /// SHELLDLL_DefView identifying the actual desktop view. Requiring that view
     /// prevents unrelated WorkerW windows (and ordinary Explorer windows) matching.
     fn is_desktop_surface(
-        saw_desktop_host: bool,
+        saw_progman: bool,
+        saw_workerw: bool,
         saw_shell_view: bool,
         saw_explorer: bool,
     ) -> bool {
-        saw_desktop_host && saw_shell_view && !saw_explorer
+        (saw_progman || saw_workerw) && saw_shell_view && !saw_explorer
     }
 
     /// Walks the ancestor chain of `start` and identifies the desktop icon view.
@@ -1308,7 +1309,8 @@ mod desktop {
         }
 
         let mut chain = Vec::new(); // stays unallocated unless `want_chain`
-        let (mut saw_desktop_host, mut saw_shell_view, mut saw_explorer) = (false, false, false);
+        let (mut saw_progman, mut saw_workerw, mut saw_shell_view, mut saw_explorer) =
+            (false, false, false, false);
         let mut hovered_is_list_view = false;
         let mut buffer = [0u16; 64];
         let mut window = start;
@@ -1318,7 +1320,8 @@ mod desktop {
             let length = unsafe { GetClassNameW(window, buffer.as_mut_ptr(), buffer.len() as i32) };
             let name = &buffer[..length.max(0) as usize];
 
-            saw_desktop_host |= utf16_eq(name, "Progman") || utf16_eq(name, "WorkerW");
+            saw_progman |= utf16_eq(name, "Progman");
+            saw_workerw |= utf16_eq(name, "WorkerW");
             saw_shell_view |= utf16_eq(name, "SHELLDLL_DefView");
             saw_explorer |= utf16_eq(name, "CabinetWClass") || utf16_eq(name, "ExploreWClass");
             if depth == 0 {
@@ -1336,7 +1339,7 @@ mod desktop {
         }
 
         Classified {
-            surface: if is_desktop_surface(saw_desktop_host, saw_shell_view, saw_explorer) {
+            surface: if is_desktop_surface(saw_progman, saw_workerw, saw_shell_view, saw_explorer) {
                 Surface::Desktop
             } else {
                 Surface::Other
@@ -1352,27 +1355,27 @@ mod desktop {
 
         #[test]
         fn recognizes_progman_desktop_view() {
-            assert!(is_desktop_surface(true, true, false));
+            assert!(is_desktop_surface(true, false, true, false));
         }
 
         #[test]
         fn recognizes_workerw_desktop_view() {
-            assert!(is_desktop_surface(true, true, false));
+            assert!(is_desktop_surface(false, true, true, false));
         }
 
         #[test]
         fn rejects_workerw_without_desktop_view() {
-            assert!(!is_desktop_surface(true, false, false));
+            assert!(!is_desktop_surface(false, true, false, false));
         }
 
         #[test]
         fn rejects_windows_outside_desktop_hosts() {
-            assert!(!is_desktop_surface(false, true, false));
+            assert!(!is_desktop_surface(false, false, true, false));
         }
 
         #[test]
         fn rejects_file_explorer_windows() {
-            assert!(!is_desktop_surface(true, true, true));
+            assert!(!is_desktop_surface(true, false, true, true));
         }
     }
 
